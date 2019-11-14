@@ -1,7 +1,7 @@
 # coding=utf-8
 from fbs_runtime.application_context.PyQt5 import ApplicationContext,cached_property
 import base64
-import sys
+import sys, os
 import webbrowser
 from datetime import datetime
 import configparser
@@ -13,10 +13,10 @@ from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import *
 from bs4 import BeautifulSoup
 
-online = True  #sayfaları internetten mi alsın, kayıttan mı?
-debug = True #konsola bilgi yaz
+debug = True
 ayarlar = 'c:\pi\oys-yesevi.ini'
 cerezF = 'c:\pi\oys-yesevi-c.ini'
+logfile= 'c:\pi\oys-yesevi.log'
 Config = configparser.ConfigParser()
 adres = 'https://oys.yesevi.edu.tr'
 dersler=[]
@@ -25,6 +25,7 @@ ilkders = -1
 
 class AppContext(ApplicationContext):
     def run(self):
+        self.ctx=appctxt
         self.main_window.show()
         return self.app.exec_()
 
@@ -34,14 +35,15 @@ class AppContext(ApplicationContext):
         return AnaPencere(self)
 
     def ayarlariOku(self):
-        self.main_window.KulAd_Sif_Al
-        if debug: print('ayarlariOku:','kullanıcı_adi-şifre')
+        #self.main_window.KulAd_Sif_Al(self.ctx)
+        kullanici=self.ctx.ayarLogin()
+        if debug: self.ctx.logYaz('ayarlariOku: kullanıcı_adi='+kullanici['kullanici_adi']+' şifre='+kullanici['sifre'])
 
     def ayarYaz(self,grup,ayar,deger):
         if 'Ayar' not in Config:
             Config['Ayar'] = {}
             Config['Ayar']['AyarOkundu']='Hayır'
-            if debug: print('ayarYaz: Ayarlar dosyadan okunmamış!')
+            if debug: self.ctx.logYaz('ayarYaz: Ayarlar dosyadan okunmamış!')
         else:
             Config['Ayar']['AyarOkundu']='Evet'
         if grup not in Config:
@@ -61,11 +63,17 @@ class AppContext(ApplicationContext):
             Config['Ayar'] = {}
             Config['Ayar']['AyarOkundu']='Hayır'
             if Config.read(ayarlar) == []:
-                if debug: print('ayarOku: Ayarlar dosyası yok')
+                if debug: self.ctx.logYaz('ayarOku: Ayarlar dosyası yok')
                 self.ayarYaz('Ayar','AyarOkundu','YeniDosya')
                 return None
             else:
                 return self.ayarOku(grup,ayar)
+
+    def logYaz(self,text):
+        text=datetime.now().strftime("%d.%m.%Y")+'/'+datetime.now().strftime('%H:%M')+': '+text+'\n'
+        text.encode('utf-8')
+        with open(logfile,'a') as dosya:
+            dosya.write(text)
 
     def cerezYaz(self,cerezler):
         global cerezF
@@ -83,12 +91,11 @@ class AppContext(ApplicationContext):
 
     def responseYaz(self, dosyaadi, icerik):
         with open(dosyaadi, 'w', encoding="utf8") as dosya:
-            if debug: print(f'responseYaz: {dosyaadi} yazıldı')
+            if debug: self.ctx.logYaz(f'responseYaz: {dosyaadi} yazıldı')
             dosya.write(icerik)
             dosya.close()
 
-    def ayarLogin(self):
-        #b = self.KulAd_Sif_Al(self)
+    def initKullanici(self):
         kullanici = {
             'giris_yap_btn': 'Sisteme Giriş Yap',
             'kullanici_adi': '',
@@ -96,9 +103,14 @@ class AppContext(ApplicationContext):
             'sg': '',
             'deger_adi': ''
         }
-        if self.ayarOku('Kullanici','kullanici_adi')==None:
-            if debug: print('ayarLogin:','Kullanıcı Adı/Şifre boş!')
-            #self.KulAd_Sif_Al()
+        return kullanici
+
+    def ayarLogin(self):
+        #b = self.main_window.KulAd_Sif_Al(self.ctx)
+        kullanici = self.initKullanici()
+        if self.ayarOku('Kullanici','kullanici_adi')==None or self.ayarOku('Kullanici','sifre')==None:
+            if debug: self.ctx.logYaz('ayarLogin:'+'Kullanıcı Adı/Şifre boş!')
+            self.main_window.KulAd_Sif_Al(self.ctx)
         else:
             kullanici['kullanici_adi'] = self.ayarOku('Kullanici','kullanici_adi')
             kullanici['sifre'] = base64.b64decode(bytearray(self.ayarOku('Kullanici','sifre'),'utf-8')).decode('utf-8')
@@ -109,25 +121,32 @@ class AppContext(ApplicationContext):
         cerezler=self.cerezOku()
         try:
             if online:
-                sayfa = requests.get(adres + '/mesajlar', cookies=cerezler)
-                self.responseYaz('c:\\pi\\temp\\oys-mesaj.html', sayfa.text)
+                yanit = requests.get(adres + '/mesajlar', cookies=cerezler)
+                sayfa= yanit.text
+                self.responseYaz('c:\\pi\\temp\\oys-mesaj.html', sayfa)
+                durum=yanit.status_code
             else:
                 with open('c:\\pi\\temp\\oys-mesaj.html', 'r', encoding="utf8") as dosya:
+                    durum='Offline <200>'
                     sayfa = dosya.read()
                     dosya.close()
-            soup = BeautifulSoup(sayfa.text, features='html.parser')
+            soup = BeautifulSoup(sayfa, features='html.parser')
+            if soup.find('div', {'class': 'alert alert-danger'}):
+                if debug: self.ctx.logYaz("loginKontrol: Kullanıcı/Şifre hatalı!!! ")
+                return None
             if soup.find('span', {'class': 'username username-hide-on-mobile'}):
                 kullanici_adi = soup.find('span', {'class': 'username username-hide-on-mobile'}).text
                 self.ayarYaz('Login', 'kullanici_adi', kullanici_adi)
+                if debug: self.ctx.logYaz(f'loginKontrol: kullanici_adi={kullanici_adi} status={durum}')
             else:
-                if debug: print('loginKontrol: kullanici_adi bulunamadı! Giriş yapılacak.')
-                kullanici_adi=self.login()
-            if debug: print(f'loginKontrol: kullanici_adi={kullanici_adi} status={sayfa.status_code}')
+                if debug: self.ctx.logYaz('loginKontrol: kullanici_adi bulunamadı! Giriş yapın.')
+                self.main_window.btn_Login.setVisible(True)
+                kullanici_adi=None
         except requests.exceptions.RequestException as e:
-            if debug: print('loginKontrol: HATA e=', e)
+            if debug: self.ctx.logYaz(f'loginKontrol: HATA e={e}')
             kullanici_adi = self.login()
         except requests.HTTPError as e:
-            if debug: print('loginKontrol: HATA e=',e)
+            if debug: self.ctx.logYaz(f'loginKontrol: HATA e={e}')
             kullanici_adi=self.login()
         return kullanici_adi
 
@@ -143,9 +162,9 @@ class AppContext(ApplicationContext):
                 dosya.close()
         soup = BeautifulSoup(sayfa, features='html.parser')
         Inputs = soup.find_all('input', {'type': 'hidden'})
-        if debug: print('login: Inputs=',Inputs) #bulunan tüm gizli Input tagler. bunlar login paketi oluşturmak için
+        if debug: print('login: Inputs=', Inputs) #bulunan tüm gizli Input tagler. bunlar login paketi oluşturmak için
         for gizli in Inputs:
-            #if debug: print('login:', gizli)
+            #if debug: self.ctx.logYaz('login:' + gizli)
             if gizli.attrs['name'] == 'sg':
                 kullanici['sg'] = gizli.attrs['value']
             if 'id' in gizli.attrs and gizli.attrs['id'] == 'cb':
@@ -153,7 +172,7 @@ class AppContext(ApplicationContext):
                 kullanici[gizli.attrs['name']] = ''
             if gizli.attrs['name'] == 'pd':
                 kullanici[kullanici['deger_adi']] = gizli.attrs['value']
-        if debug: print('login: kullanici=', kullanici)
+        if debug: self.ctx.logYaz(f'login: kullanici={kullanici}')
         if online:
             response = requests.post(adres + '/login', data=kullanici)
             sayfa = response.text
@@ -165,18 +184,23 @@ class AppContext(ApplicationContext):
                 sayfa = dosya.read()
                 dosya.close()
                 cerezler=self.cerezOku()
-        if debug: print('login: çerezler=',cerezler)
-        if debug: print('login: type-cerezler=',type(cerezler))
-        #self.ayarYaz('Login','cerezler',str(cerezler))
+        if debug: print('login: çerezler=' + cerezler)
+        if debug: self.ctx.logYaz(f'login: type-cerezler={type(cerezler)}')
         self.cerezYaz(cerezler)
         soup = BeautifulSoup(sayfa, features='html.parser')
+        if soup.find('div', {'class': 'alert alert-danger'}):
+            if debug: self.ctx.logYaz("login: Kullanıcı/Şifre hatalı!!!")
+            self.main_window.btn_Login.setVisible(True)
+            return None
         if soup.find('span', {'class': 'username username-hide-on-mobile'}):
             kullanici_adi = soup.find('span', {'class': 'username username-hide-on-mobile'}).text
             self.ayarYaz('Login', 'kullanici_adi', kullanici_adi)
-            if debug: print("login: kullanici_adi=",kullanici_adi)
+            if debug: self.ctx.logYaz(f"login: kullanici_adi={kullanici_adi}")
+            self.main_window.btn_Login.setVisible(False)
         else:
             kullanici_adi=None
-            if debug: print("login: Kullanıcı/Şifre hatalı? kullanici_adi=",kullanici_adi)
+            if debug: self.ctx.logYaz(f"login: Kullanıcı/Şifre hatalı? kullanici_adi={kullanici_adi}")
+            self.main_window.btn_Login.setVisible(True)
         return kullanici_adi
 
 class AnaPencere(QMainWindow):
@@ -196,23 +220,24 @@ class AnaPencere(QMainWindow):
         self.anaLayout.addWidget(QLabel('Kullanıcı Adı:', anaform))
         self.lbl_KullaniciAd = QLabel(kullanici_adi, anaform)
         self.anaLayout.addWidget(self.lbl_KullaniciAd)
+        self.btn_Login = QPushButton('Login', self)
+        self.btn_Login.clicked.connect(self.btnLoginClicked)
+        self.anaLayout.addWidget(self.btn_Login)
         if kullanici_adi != None and kullanici_adi.strip() !='':
             self.lbl_KullaniciAd.setText(kullanici_adi)
+            self.btn_Login.hide()
         else:
-            self.btn_Login = QPushButton('Login', self)
-            self.btn_Login.clicked.connect(self.btnLoginClicked)
-            self.anaLayout.addWidget(self.btn_Login)
             self.btn_Login.show()
         self.setupMenu()
         self.show()
 
     @pyqtSlot()
     def btnLoginClicked(self):
-        kullanici_adi = self.ctx.loginKontrol()
+        kullanici_adi = self.ctx.login()
         self.lbl_KullaniciAd.setText(kullanici_adi)
-        self.anaLayout.removeWidget(self.btn_Login)
-        self.btn_Login.hide()
-        if debug: print('btnLoginClicked: kullanici_adi=', kullanici_adi)
+        #self.anaLayout.removeWidget(self.btn_Login)
+        self.btn_Login.setVisible(False)
+        if debug: self.ctx.logYaz(f'btnLoginClicked: kullanici_adi={kullanici_adi}')
 
     def CloseEvent(self, e):
         e.ignore()
@@ -253,16 +278,16 @@ class AnaPencere(QMainWindow):
     class KulAd_Sif_Al(QDialog):
         @pyqtSlot()
         def btn_Login_clicked(self):
-
             self.ctx.ayarYaz('Kullanici','kullanici_adi', self.txt_KulAd.text() )
-            if debug: print('kuad_sif_al:',self.txt_KulAd.text())
+            if debug: self.ctx.logYaz(f'kuad_sif_al:{ self.txt_KulAd.text() }' )
             self.ctx.ayarYaz('Kullanici','sifre', str(base64.b64encode(self.txt_KulSif.text().encode()).decode('utf-8')) )
             self.close()
 
-        def __init__(self):
+        def __init__(self,ctx):
             super(QDialog, self).__init__()
+            self.ctx=ctx
             dlayout = QVBoxLayout(self)
-            kullanici=self.ctx.ayarLogin()
+            kullanici=self.ctx.initKullanici()
             lbl_KulAd = QLabel('Kullanıcı adı (TC No):', self)
             dlayout.addWidget(lbl_KulAd)
             self.txt_KulAd = QLineEdit(self)
@@ -290,9 +315,11 @@ class dersProgrami(QDialog):
         self.ctx=ctx
         self.title = 'Ders Programı'
         self.initUI()
-        self.ders_programi_getir()
-        self.dersProgramDoldur()
-        self.exec()
+        if self.ders_programi_getir():
+            self.dersProgramDoldur()
+            self.exec()
+        else:
+            self.reject()
 
     def dersProgramDoldur(self):
         dersler = self.ders_program_kontrol()
@@ -310,7 +337,7 @@ class dersProgrami(QDialog):
                 self.tableWidget.item(ilkders, 2).setBackground(Qt.green)
             else:
                 self.tableWidget.item(ilkders, 2).setBackground(Qt.white)
-        if debug: print(f'dersProgramDoldur: {i} ders dolduruldu')
+        if debug: self.ctx.logYaz(f'dersProgramDoldur: {i} ders dolduruldu')
 
     @pyqtSlot()
     def btn_Baslat_clicked(self):
@@ -323,13 +350,13 @@ class dersProgrami(QDialog):
             self.btn_Baslat.setText('Otomatik İzlemeyi İptal Et')
             otomatik = True
             if ilkders>-1:
-                if debug: print('Baslat_clicked: okunan=', dersler[ilkders]['kalan'],' dakika')
+                if debug: self.ctx.logYaz(f"Baslat_clicked: okunan={ dersler[ilkders]['kalan'] } dakika")
                 #kalan=int(dersler[ilkders]['kalan'])*60
                 kalan=self.kalanDakika(dersler[ilkders]['saat'])*60
-                if debug: print('Baslat_clicked: hesaplanan=', str(kalan)+' saniye')
+                if debug: self.ctx.logYaz(f'Baslat_clicked: hesaplanan={kalan} saniye')
                 self.ders_zamanla(kalan)
             else:
-                if debug: print("Başlat_clicked: Bu hafta ders yok!, ilkders=", ilkders)
+                if debug: self.ctx.logYaz(f"Başlat_clicked: Bu hafta ders yok!, ilkders={ilkders}")
                 self.ders_zamanla(0)
         self.ctx.ayarYaz('DersProgram','Otomatik','Evet' if otomatik else 'Hayır')
         self.dersProgramDoldur()
@@ -362,7 +389,7 @@ class dersProgrami(QDialog):
         #if debug: print('oturumGetir',response.content)
         sonuc=response.json()
         oturum=sonuc['Deger']
-        if debug: print('oturumGetir: session=',oturum)
+        if debug: self.ctx.logYaz(f'oturumGetir: session={oturum}')
         self.ctx.ayarYaz('Login', 'oturum', oturum)
         return oturum
 
@@ -370,7 +397,9 @@ class dersProgrami(QDialog):
         global dersler
         dersler=[]
         if online:
-            self.ctx.loginKontrol()
+            if self.ctx.loginKontrol()==None:
+                if debug: self.ctx.logYaz("dersProgramiGetir: Giriş Yapılmadı, iptal?")
+                self.ctx.login()
             cerezler=self.ctx.cerezOku()
             response = requests.post(adres + '/ders_islemleri_ekran', cookies=cerezler)
             yanit = response.text
@@ -380,6 +409,7 @@ class dersProgrami(QDialog):
             with open('c:\\pi\\temp\\oys-ders.html', 'r', encoding="utf8") as dosya:
                 yanit = dosya.read()
                 dosya.close()
+            oturum=self.ctx.ayarOku('Login', 'oturum')
         soup = BeautifulSoup(yanit, features='html.parser')
         bulunandersler = soup.find_all('div', {'class': 'card hover make-it-slow card-items'})
         i = 0
@@ -396,6 +426,7 @@ class dersProgrami(QDialog):
                 dersler[i]['tarih'] = eleman.text
             else:
                 dersler[i]['tarih'] = 'Oturum yok'
+                dersler[i]['acildi'] = True
             eleman = bulunanders.find('span', {'class': 'title-time'})
             if eleman:
                 dersler[i]['saat'] = eleman.text
@@ -405,14 +436,14 @@ class dersProgrami(QDialog):
                 dersler[i]['acildi']=False
             else:
                 dersler[i]['acildi'] = True
-            if debug: print("dersProgramiGetir:", i, dersler[i])
+            if debug: self.ctx.logYaz(f"dersProgramiGetir:{i} {dersler[i]}")
             i += 1
         Inputs = soup.find_all('input', {'type': 'hidden'})
         for gizli in Inputs:
             if 'id' in gizli.attrs and gizli.attrs['id'] == 'ACSI':
                 #oturum = gizli.attrs['value']
                 #self.ctx.ayarYaz('Login', 'oturum',oturum)
-                if debug: print('dersProgramiGetir: session=', oturum)
+                if debug: self.ctx.logYaz(f'dersProgramiGetir: session={oturum}' )
             #else: oturum=None
         self.ctx.ayarYaz('DersProgram','tarih',datetime.now().strftime("%d.%m.%Y"))
         self.ctx.ayarYaz('DersProgram','saat',datetime.now().strftime('%H:%M'))
@@ -423,7 +454,7 @@ class dersProgrami(QDialog):
             kalan=-1 * self.gecenDakika(saat1)
         else:
             kalan = int((datetime.strptime(saat1, '%H:%M') - datetime.strptime(datetime.now().strftime('%H:%M'), '%H:%M')).seconds / 60)
-        if debug: print('kalanDakika: ',kalan, 'dk. saat1=',saat1,' şimdi=',datetime.now().strftime('%H:%M'))
+        if debug: self.ctx.logYaz(f"kalanDakika: { kalan } dk. saat1={saat1} şimdi={ datetime.now().strftime('%H:%M') }" )
         return kalan
 
     def gecenDakika(self,saat1):
@@ -431,7 +462,7 @@ class dersProgrami(QDialog):
             gecen=-1 * self.kalanDakika(saat1)
         else:
             gecen = int((datetime.strptime(datetime.now().strftime('%H:%M'), '%H:%M') - datetime.strptime(saat1, '%H:%M')).seconds / 60)
-        if debug: print('gecenDakika: ',gecen, 'dk. saat1=',saat1,' şimdi=',datetime.now().strftime('%H:%M'))
+        if debug: self.ctx.logYaz(f"gecenDakika: {gecen} dk. saat1={saat1} şimdi={ datetime.now().strftime('%H:%M') }")
         return gecen
 
     def ders_program_kontrol(self):
@@ -449,13 +480,13 @@ class dersProgrami(QDialog):
                         ilkders = i
             else:
                 dersler[i]['kalan'] = '0'
-            if debug: print('ders_program_kontrol: ilkders=',ilkders,'bugunku=',bugunku,'i=', i, dersler[i])
+            if debug: print('ders_program_kontrol: ilkders=', ilkders, 'bugunku=', bugunku, 'i=', i,  dersler[i])
         return dersler
 
     def ders_program_guncelle(self):
         if self.ctx.ayarOku('DersProgram','tarih')==datetime.now().strftime("%d.%m.%Y"):
             if self.gecenDakika(self.ctx.ayarOku('DersProgram','saat')) > 60:
-                if debug: print('ders_program_guncelle: son saat=',self.ctx.ayarOku('DersProgram','saat'))
+                if debug: self.ctx.logYaz(f"ders_program_guncelle: son saat={self.ctx.ayarOku('DersProgram','saat')}" )
                 self.ders_programi_getir()
         self.ders_program_kontrol()
         self.dersProgramDoldur()
@@ -468,10 +499,11 @@ class dersProgrami(QDialog):
             oturum=self.ders_programi_getir()
             webbrowser.open(dersler[i]['link']+'?session='+oturum+'ok&proto=true')
             dersler[i]['acildi']=True
+            self.ctx.logYaz(dersler[i]['link']+'?session='+oturum+'ok&proto=true')
             self.ctx.ayarYaz('DersProgram','SonAcilan',dersler[i]['tarih']+'/'+dersler[i]['saat'])
-            if debug: print('DersAc:', dersler[i]['link'], ' açıldı')
+            if debug: self.ctx.logYaz(f"DersAc:{ dersler[i]['link'] } açıldı")
         else:
-            if debug: print('DersAc:', dersler[i]['link'], ' daha önce açılmış')
+            if debug: self.ctx.logYaz(f"DersAc:{ dersler[i]['link'] } daha önce açılmış")
 
     def ders_zamanla(self, kalan):
         #timer = threading.Timer(kalan, dersAc)
@@ -481,9 +513,9 @@ class dersProgrami(QDialog):
             self.timer=QTimer()
             self.timer.timeout.connect(self.dakikadaBir)
             self.timer.start(60*1000)
-            if debug: print("ders_zamanla: zamanlama başladı, ilkders=", ilkders)
+            if debug: self.ctx.logYaz(f"ders_zamanla: zamanlama başladı, ilkders={ilkders}" )
         else:
-            if debug: print("ders_zamanla: zamanlama iptal edildi, ilkders=", ilkders)
+            if debug: self.ctx.logYaz(f"ders_zamanla: zamanlama iptal edildi, ilkders={ilkders}")
             #self.timer.cancel()
             self.timer.stop()
             self.timer=None
@@ -491,20 +523,39 @@ class dersProgrami(QDialog):
     def dakikadaBir(self):
         global dersler, ilkders
         i=ilkders
-        if debug: print('dakikadaBir: ders=',i,'daha önce','açıldı' if dersler[i]['acildi'] else 'açılmadı')
+        if debug: self.ctx.logYaz(f"dakikadaBir: ders={i} daha önce {'açıldı' if dersler[i]['acildi'] else 'açılmadı'}")
         if i>-1:
             if not dersler[i]['acildi']:
                 if dersler[i]['tarih'] == datetime.now().strftime("%d.%m.%Y"):  #hala bugünde miyiz?
                     if self.kalanDakika(dersler[i]['saat'])<=3:
                         self.dersAc(i)
                 else:
-                    dersler[i]['acildi'] = True #tarih geçmiş, geçmiş olsun
-                    ilkders=-1
+                    if self.ctx.ayarOku('DersProgram','TekrarAcma')=='Evet':
+                        dersler[i]['acildi'] = True #tarih geçmiş, geçmiş olsun
+                        ilkders=-1
+                    else:
+                        self.ctx.ayarYaz('DersProgram', 'TekrarAcma','Hayir')
         self.ders_program_guncelle()
         #self.ders_zamanla(0)
 
 
 if __name__ == '__main__':
     appctxt = AppContext()                      # 4. Instantiate the subclass
+    os.makedirs('C:\\pi\\temp',exist_ok=True)
+    if not os.path.isfile(logfile):
+        with open(logfile, 'w') as dosya:
+            dosya.write('Yeni Dosya')
+    debug =appctxt.ayarOku('Ayar','debug')
+    if debug=='Evet': debug = True #konsola bilgi yaz
+    else: debug = False
+    appctxt.ayarYaz('Ayar','debug','Evet' if debug else 'Hayir')
+    online = appctxt.ayarOku('Ayar','online')
+    if online=='Hayir': online = False #sayfaları internetten mi alsın, kayıttan mı?
+    else: online = True
+    appctxt.ayarYaz('Ayar','online','Evet' if online else 'Hayir')
     exit_code = appctxt.run()                   # 5. Invoke run()
     sys.exit(exit_code)
+
+
+'''TODO
+'''

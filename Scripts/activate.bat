@@ -27,6 +27,6 @@ if defined _OLD_VIRTUAL_PATH (
     set "_OLD_VIRTUAL_PATH=%PATH%"
 )
 
-set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
+set "PATH=%VIRTUAL_ENV%\Scripts;d:\python36-32\;d:\python36-32\Scripts;D:\Program Files (x86)\NSIS;%PATH%"
 
 :END
