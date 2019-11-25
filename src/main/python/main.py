@@ -113,6 +113,7 @@ class AppContext(ApplicationContext):
         self.ctx.maxSaat = self.ctx.ayarOku('DersProgram', 'maxSaat')
         if self.ctx.maxSaat is None: self.ctx.maxSaat = '23:30'
         self.ctx.tekraracma = True if self.ctx.ayarOku('DersProgram', 'TekrarAcma') == 'Evet' else False
+        self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj')
 
     def ayarYaz(self, grup, ayar, deger):
         if 'Ayar' not in Config:
@@ -223,7 +224,7 @@ class AppContext(ApplicationContext):
             self.setStandardButtons(buttons)
             self.timer = QTimer()
             self.timer.setInterval(timeout * 1000)
-            self.timer.timeout.connect(self.close)
+            self.timer.timeout.connect(self.autoClose)
             self.timer.start()
             self.exec_()
 
@@ -358,18 +359,22 @@ class AnaPencere(QMainWindow):
         self.setWindowTitle(self.title)
         self.resize(250, 150)
         kullanici_adi = self.ctx.ayarOku('Login', 'kullanici_adi')
-        anaform = QWidget(self)
-        self.anaLayout = QHBoxLayout(anaform)
-        anaform.setLayout(self.anaLayout)
-        self.setCentralWidget(anaform)
-        self.lblOnOff = QLabel('(Online)' if online else '(Offline)', anaform)
+        self.anaform = QWidget(self)
+        self.anaVLayout = QVBoxLayout(self.anaform)
+        self.anaLayout = QHBoxLayout(self.anaform)
+        self.anaVLayout.addLayout(self.anaLayout)
+        self.anaform.setLayout(self.anaLayout)
+        self.setCentralWidget(self.anaform)
+        self.lblOnOff = QLabel('(Online)' if online else '(Offline)', self.anaform)
         self.anaLayout.addWidget(self.lblOnOff)
-        self.anaLayout.addWidget(QLabel('Kullanıcı Adı:', anaform))
-        self.lbl_KullaniciAd = QLabel(kullanici_adi, anaform)
+        self.anaLayout.addWidget(QLabel('Kullanıcı Adı:', self.anaform))
+        self.lbl_KullaniciAd = QLabel(kullanici_adi, self.anaform)
         self.anaLayout.addWidget(self.lbl_KullaniciAd)
         self.btn_Login = QPushButton('Login', self)
         self.btn_Login.clicked.connect(self.btnLoginClicked)
         self.anaLayout.addWidget(self.btn_Login)
+        self.lblMesaj=QLabel(f"Mesaj: {self.ctx.Mesaj}", self.anaform)
+        self.anaVLayout.addWidget(self.lblMesaj)
         if kullanici_adi != None and kullanici_adi.strip() != '':
             self.lbl_KullaniciAd.setText(kullanici_adi)
             self.btn_Login.hide()
@@ -388,15 +393,18 @@ class AnaPencere(QMainWindow):
         self.btn_Login.setVisible(False)
         if debug: self.ctx.logYaz(f'btnLoginClicked: kullanici_adi={kullanici_adi}')
 
+    @pyqtSlot()
     def closeEvent(self, e):
         if debug: self.ctx.logYaz(f'Uygulama kapatıldı...')
         e.accept()
         #self.deleteLater()
 
+    @pyqtSlot()
     def dersProgramiAc(self):
         b = dersProgrami(self.ctx)
         # b.show()
 
+    @pyqtSlot()
     def scogezginiac(self):
         b = scoGezgini(self.ctx)
 
@@ -466,6 +474,7 @@ class dersProgrami(QDialog):
                 self.tableWidget.item(ilkders, 2).setBackground(Qt.white)
         if debug: self.ctx.logYaz(f'dersProgramDoldur: {i} ders dolduruldu, ilkders={ilkders}')
 
+    @pyqtSlot()
     def closeEvent(self, event):
         if self.otomatik:
             self.otomatik = False
@@ -521,7 +530,11 @@ class dersProgrami(QDialog):
         mesaj = eval(sonuc['Deger'])
         if debug: print(f"oturumGetir: Gelen Mesaj Sayısı={mesaj['GELEN']}, Giden Mesaj={mesaj['GIDEN']}")
         if mesaj['GELEN'] > 0:
-            self.ctx.TimedMessageBox("oturumGetir", "Mesajınız Var")
+            self.ctx.main_window.lblMesaj.setText(f"Mesaj: {mesaj['GELEN']}")
+            self.ctx.TimedMessageBox("oturumGetir", f"Mesajınız Var ({mesaj['GELEN']})")
+        else:
+            self.ctx.main_window.lblMesaj.setText(f"Mesaj: {0}")
+        self.ctx.ayarYaz('Login', 'Mesaj', str(mesaj['GELEN']))
         veri = {'page': 'GTACSI', 'sg': ''}
         response = requests.post(adres + '/getMessagePage', data=veri, cookies=cerezler)
         sonuc = response.json()
