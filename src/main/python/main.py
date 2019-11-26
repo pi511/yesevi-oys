@@ -46,14 +46,18 @@ class AppContext(ApplicationContext):
             uic.loadUi(self.ctx.get_resource('Ayarlar.ui'), self)
             self.debug = debug
             self.online = online
-            self.minSaat = self.ctx.minSaat
-            self.maxSaat = self.ctx.maxSaat
             self.dersDakika = self.ctx.dersDakika
             self.spnDakika.setValue(self.ctx.dersDakika)
             self.cbxDebug.setChecked(debug)
             self.cbxOnline.setChecked(online)
+            self.minSaat = self.ctx.minSaat
+            self.maxSaat = self.ctx.maxSaat
+            self.spnTimerDk.setValue(self.ctx.TimerDk)
+            self.spnGuncellemeDk.setValue(self.ctx.GuncellemeDk)
             self.cbxTekrarAcma.setChecked(True if self.ctx.tekraracma else False)
+            self.spnTekrarEnGec.setValue(self.ctx.TekrarEnGec)
             self.btnKulSif.clicked.connect(self.ctx.kulAdSifAlAc)
+            self.btnLogReset.clicked.connect(self.logReset)
             self.timMinSaat.setTime(QTime.fromString(self.ctx.minSaat))
             self.timMaxSaat.setTime(QTime.fromString(self.ctx.maxSaat))
             self.buttonBox.accepted.connect(self.applyAll)
@@ -62,25 +66,36 @@ class AppContext(ApplicationContext):
             debug = self.debug
             online = self.online
 
+        def logReset(self):
+            if self.ctx.TimedMessageBox('Ayarlar',f'Log dosyası {logfile} içeriği silinecek, emin misiniz?',QMessageBox.Yes | QMessageBox.No , timeout=10, defaultBtn=QMessageBox.No, noExec=True).exec_()==QMessageBox.Yes:
+                open(logfile,'w').close()
+                if debug: print(f"Ayarlar: {logfile} içeriği silindi.")
+
         def cancel(self):
             if debug: print(f"Ayarlar: iptal edildi")
 
         def applyAll(self):
-            self.ctx.minSaat = self.timMinSaat.time().toString('hh:mm')
-            self.ctx.ayarYaz('DersProgram', 'minSaat', self.ctx.minSaat)
-            self.ctx.maxSaat = self.timMaxSaat.time().toString('hh:mm')
-            self.ctx.ayarYaz('DersProgram', 'maxSaat', self.ctx.maxSaat)
+            self.ctx.dersDakika = self.spnDakika.value()
+            self.ctx.ayarYaz('DersProgram', 'dersDakika', str(self.ctx.dersDakika))
             self.debug = self.cbxDebug.isChecked()
             print('Ayarlar: debug=', 'Evet' if self.debug else 'Hayir')
             self.ctx.ayarYaz('Ayar', 'debug', 'Evet' if self.debug else 'Hayir')
             self.online = self.cbxOnline.isChecked()
             self.ctx.ayarYaz('Ayar', 'online', 'Evet' if self.online else 'Hayir')
-            if debug: self.ctx.logYaz(f"Ayarlar: Online= {'Evet' if self.online else 'Hayir'}")
             self.ctx.main_window.lblOnOff.setText('(Online)' if self.online else '(Offline)')
-            self.ctx.dersDakika = self.spnDakika.value()
-            self.ctx.ayarYaz('DersProgram', 'dersDakika', str(self.ctx.dersDakika))
+            if debug: self.ctx.logYaz(f"Ayarlar: Online= {'Evet' if self.online else 'Hayir'}")
+            self.ctx.minSaat = self.timMinSaat.time().toString('hh:mm')
+            self.ctx.ayarYaz('DersProgram', 'minSaat', self.ctx.minSaat)
+            self.ctx.maxSaat = self.timMaxSaat.time().toString('hh:mm')
+            self.ctx.ayarYaz('DersProgram', 'maxSaat', self.ctx.maxSaat)
+            self.ctx.TimerDk=self.spnTimerDk.value()
+            self.ctx.ayarYaz('Ayar', 'TimerDk',str(self.ctx.TimerDk))
+            self.ctx.GuncellemeDk=self.spnGuncellemeDk.value()
+            self.ctx.ayarYaz('DersProgram', 'GuncellemeDk',str(self.ctx.GuncellemeDk))
             self.ctx.tekraracma = self.cbxTekrarAcma.isChecked()
             self.ctx.ayarYaz('DersProgram', 'TekrarAcma', 'Evet' if self.ctx.tekraracma else 'Hayir')
+            self.ctx.TekrarEnGec=self.spnTekrarEnGec.value()
+            self.ctx.ayarYaz('DersProgram', 'TekrarEnGec',str(self.ctx.TekrarEnGec))
 
     def ayarlariAc(self):
         self.ctx.Ayarlar(self.ctx)
@@ -105,15 +120,24 @@ class AppContext(ApplicationContext):
         else:
             online = True
         self.ctx.ayarYaz('Ayar', 'online', 'Evet' if online else 'Hayir')
-        dersDakika = self.ctx.ayarOku('DersProgram', 'dersDakika')
-        if dersDakika is None: dersDakika = '3'
-        self.ctx.dersDakika = int(dersDakika)
+        ayarDeger = self.ctx.ayarOku('Ayar', 'TimerDk')
+        if ayarDeger is None: ayarDeger = '1' #1 dakikada bir kontrol
+        self.ctx.TimerDk = int(ayarDeger)
+        ayarDeger = self.ctx.ayarOku('DersProgram', 'GuncellemeDk')
+        if ayarDeger is None: ayarDeger = '120' #ders programı online güncelleme
+        self.ctx.GuncellemeDk = int(ayarDeger)
+        ayarDeger = self.ctx.ayarOku('DersProgram', 'dersDakika')
+        if ayarDeger is None: ayarDeger = '3' #dersten 3 dakika önce aç
+        self.ctx.dersDakika = int(ayarDeger)
         self.ctx.minSaat = self.ctx.ayarOku('DersProgram', 'minSaat')
-        if self.ctx.minSaat is None: self.ctx.minSaat = '17:30'
+        if self.ctx.minSaat is None: self.ctx.minSaat = '17:30' #otomatik izleme en erken
         self.ctx.maxSaat = self.ctx.ayarOku('DersProgram', 'maxSaat')
-        if self.ctx.maxSaat is None: self.ctx.maxSaat = '23:30'
+        if self.ctx.maxSaat is None: self.ctx.maxSaat = '23:30' #otomatik izleme en geç
         self.ctx.tekraracma = True if self.ctx.ayarOku('DersProgram', 'TekrarAcma') == 'Evet' else False
-        self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj')
+        ayarDeger = self.ctx.ayarOku('DersProgram', 'TekrarEnGec')
+        if ayarDeger is None: ayarDeger = '10' #dersten sonra tekrar açma en son sınır
+        self.ctx.TekrarEnGec = int(ayarDeger)
+        self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj') #gelen mesaj sayısı, en son
 
     def ayarYaz(self, grup, ayar, deger):
         if 'Ayar' not in Config:
@@ -217,16 +241,17 @@ class AppContext(ApplicationContext):
             self.exec()
 
     class TimedMessageBox(QMessageBox):
-        def __init__(self, title, text, buttons=QMessageBox.Ok, timeout=3):
+        def __init__(self, title, text, buttons=QMessageBox.Ok, timeout=3, defaultBtn=None, noExec=False):
             super(QMessageBox, self).__init__()
             self.setWindowTitle(title)
             self.setText(text)
             self.setStandardButtons(buttons)
+            if defaultBtn: self.setDefaultButton(defaultBtn)
             self.timer = QTimer()
             self.timer.setInterval(timeout * 1000)
             self.timer.timeout.connect(self.autoClose)
             self.timer.start()
-            self.exec_()
+            if not noExec: self.exec_()
 
         def autoClose(self):
             self.timer.stop()
@@ -478,7 +503,7 @@ class dersProgrami(QDialog):
     def closeEvent(self, event):
         if self.otomatik:
             self.otomatik = False
-            if debug: print(f"Otomatik kapalı")
+            if debug: print(f"Otomatik izleme kapandı")
             self.ders_zamanla(-1)
 
     @pyqtSlot()
@@ -619,7 +644,7 @@ class dersProgrami(QDialog):
         return gecen
 
     def gecerliSaatler(self, saat1):
-        if debug: self.ctx.logYaz(f"gecerliSaatler: Şimdi={saat1} min={self.ctx.minSaat} max={self.ctx.maxSaat}")
+        if debug: self.ctx.logYaz(f"gecerliSaatler: min={self.ctx.minSaat} max={self.ctx.maxSaat} Şimdi={saat1} ")
         if datetime.strptime(saat1, '%H:%M') >= datetime.strptime(self.ctx.minSaat, '%H:%M') and datetime.strptime(
                 saat1, '%H:%M') <= datetime.strptime(self.ctx.maxSaat, '%H:%M'):
             return True
@@ -647,8 +672,8 @@ class dersProgrami(QDialog):
 
     def ders_program_guncelle(self):
         if self.ctx.ayarOku('DersProgram', 'tarih') == datetime.now().strftime("%d.%m.%Y"):
-            if self.gecenDakika(self.ctx.ayarOku('DersProgram', 'saat')) > 60:
-                if debug: self.ctx.logYaz(f"ders_program_guncelle: son saat={self.ctx.ayarOku('DersProgram', 'saat')}")
+            if self.gecenDakika(self.ctx.ayarOku('DersProgram', 'saat')) > self.ctx.GuncellemeDk:
+                if debug: self.ctx.logYaz(f"ders_program_guncelle: son saat={self.ctx.ayarOku('DersProgram', 'saat')} periyod={self.ctx.GuncellemeDk}")
                 self.ders_programi_getir()
         self.ders_program_kontrol()
         self.dersProgramDoldur()
@@ -664,9 +689,9 @@ class dersProgrami(QDialog):
             #flvView(self.ctx,dersler[i]['link'] + '?session=' + oturum + '&proto=true')
             self.ctx.logYaz(dersler[i]['link'] + '?session=' + oturum + '&proto=true')
             self.ctx.ayarYaz('DersProgram', 'SonAcilan', simdiki)
-            if debug: self.ctx.logYaz(f"DersAc:{dersler[i]['link']} açıldı")
+            if debug: self.ctx.logYaz(f"DersAc:{dersler[i]['link']} açıldı, TekrarEnGec={self.ctx.TekrarEnGec}")
         else:
-            if debug: self.ctx.logYaz(f"DersAc:{dersler[i]['link']} daha önce açılmış")
+            if debug: self.ctx.logYaz(f"DersAc:{dersler[i]['link']} daha önce açılmış, TekrarEnGec={self.ctx.TekrarEnGec}")
 
     def ders_zamanla(self, kalan):
         # timer = threading.Timer(kalan, dersAc)
@@ -675,8 +700,8 @@ class dersProgrami(QDialog):
             # self.timer.start()
             self.timer = QTimer()
             self.timer.timeout.connect(self.dakikadaBir)
-            self.timer.start(60 * 1000)
-            if debug: self.ctx.logYaz(f"ders_zamanla: zamanlama başladı, ilkders={ilkders}")
+            self.timer.start(60 * 1000 * self.ctx.TimerDk)
+            if debug: self.ctx.logYaz(f"ders_zamanla: zamanlama başladı, {self.ctx.TimerDk} dk.da bir, ilkders={ilkders}")
         else:
             if debug: self.ctx.logYaz(f"ders_zamanla: zamanlama iptal edildi, ilkders={ilkders}")
             # self.timer.cancel()
@@ -686,13 +711,14 @@ class dersProgrami(QDialog):
     def dakikadaBir(self):
         global dersler, ilkders
         i = ilkders
-        if debug: self.ctx.logYaz(f"dakikadaBir: ders={i} daha önce {'açıldı' if dersler[i]['acildi'] else 'açılmadı'}")
+        if debug: self.ctx.logYaz(f"dakikadaBir: ders={i} daha önce {'açıldı' if dersler[i]['acildi'] else 'açılmadı'} tekrar kontrol={self.ctx.TimerDk} dk sonra")
         if i > -1 and self.gecerliSaatler(datetime.now().strftime('%H:%M')):
             if not dersler[i]['acildi']:
                 if dersler[i]['tarih'] == datetime.now().strftime("%d.%m.%Y"):  # hala bugünde miyiz?
                     if self.kalanDakika(dersler[i]['saat']) <= self.ctx.dersDakika:
                         self.dersAc(i)
                         if self.ctx.tekraracma: dersler[i]['acildi'] = True
+                        if self.gecenDakika(dersler[i]['saat']) > self.ctx.TekrarEnGec : dersler[i]['acildi'] = True
                 else:
                     dersler[i]['acildi'] = True  # tarih geçmiş, geçmiş olsun
                     ilkders = -1
