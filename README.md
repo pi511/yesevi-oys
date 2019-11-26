@@ -9,14 +9,14 @@ Ders başladığınız hocanızın "iyi akşamlar arkadaşlar" sesiyle, dersin b
 
 
 **Ayarlar** açıklaması:<br>
-- Kaç dakika önce     : ders sayfası, ders saatinden kaç dakika önce açılsın.
-- Debug (log tut)     : bir dosyaya (ve/veya konsola) debug bilgileri yazılsın
-- Online (siteden al) : uygulama online mı çalışsın, yoksa indirdiği responselar üzerinden offline mı
-- En erken, En geç ders saati : bu saatler dışında ders programı güncellemesi yapma, ders açma
-- Timer kontrol dakika: otomatik işlemler kaç dakikada bir çalışsın (program kontrol)
-- Ders program güncelleme     : ders programını siteden ne periyodda güncellesin
-- Dersi bir kez aç    : otomatik açılan sayfada problem olması halinde dakikada bir sayfayı tekrar aç
-- En geç kaç dk.      : dersi birden fazla açacaksa, ders saatinden en geç kaç dk. sonra tekrar açsın (timer kontrol dakika'da belirtilen dk.da bir açılacak)
+- Kaç dakika önce     : ders sayfası, ders saatinden kaç dakika önce açılsın. def=3
+- Debug (log tut)     : bir dosyaya (ve/veya konsola) debug bilgileri yazılsın def=hayır
+- Online (siteden al) : uygulama online mı çalışsın, yoksa indirdiği responselar üzerinden offline mı def:evet
+- En erken, En geç ders saati : bu saatler dışında ders programı güncellemesi yapma, ders açma def:17.30-23.30
+- Timer kontrol dakika: otomatik işlemler kaç dakikada bir çalışsın (program kontrol) def=1
+- Ders program güncelleme     : ders programını siteden ne periyodda güncellesin def=120
+- Dersi bir kez aç    : otomatik açılan sayfada problem olması halinde dakikada bir sayfayı tekrar aç def=açma
+- En geç kaç dk.      : dersi birden fazla açacaksa, ders saatinden en geç kaç dk. sonra tekrar açsın (timer kontrol dakika'da belirtilen dk.da bir açılacak) def=10
 
 
 
