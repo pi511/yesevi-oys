@@ -13,7 +13,10 @@ Ders başladığınız hocanızın "iyi akşamlar arkadaşlar" sesiyle, dersin b
 - Debug (log tut)     : bir dosyaya (ve/veya konsola) debug bilgileri yazılsın
 - Online (siteden al) : uygulama online mı çalışsın, yoksa indirdiği responselar üzerinden offline mı
 - En erken, En geç ders saati : bu saatler dışında ders programı güncellemesi yapma, ders açma
+- Timer kontrol dakika: otomatik işlemler kaç dakikada bir çalışsın (program kontrol)
+- Ders program güncelleme     : ders programını siteden ne periyodda güncellesin
 - Dersi bir kez aç    : otomatik açılan sayfada problem olması halinde dakikada bir sayfayı tekrar aç
+- En geç kaç dk.      : dersi birden fazla açacaksa, ders saatinden en geç kaç dk. sonra tekrar açsın (timer kontrol dakika'da belirtilen dk.da bir açılacak)
 
 
 
