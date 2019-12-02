@@ -286,7 +286,7 @@
     </rect>
    </property>
    <property name="minimum">
-    <number>3</number>
+    <number>1</number>
    </property>
    <property name="maximum">
     <number>10</number>
@@ -363,6 +363,19 @@
    </property>
    <property name="text">
     <string>Log sıfırla</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radKaynak">
+   <property name="geometry">
+    <rect>
+     <x>248</x>
+     <y>70</y>
+     <width>137</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Kaynak: Program</string>
    </property>
   </widget>
  </widget>

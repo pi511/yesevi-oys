@@ -10,7 +10,7 @@ import requests
 import requests.cookies
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QTimer, QTime, pyqtSlot
-from PyQt5.QtWidgets import *
+#from PyQt5.QtWidgets import *
 from bs4 import BeautifulSoup
 from sco import *
 
@@ -27,6 +27,10 @@ ilkders = -1
 
 
 class AppContext(ApplicationContext):
+    def __init__(self):
+        super(AppContext, self).__init__()
+        #global değişkenleri buraya alabilirsin
+
     def run(self):
         self.ctx = appctxt
         self.main_window.show()
@@ -54,6 +58,8 @@ class AppContext(ApplicationContext):
             self.maxSaat = self.ctx.maxSaat
             self.spnTimerDk.setValue(self.ctx.TimerDk)
             self.spnGuncellemeDk.setValue(self.ctx.GuncellemeDk)
+            self.radKaynak.setChecked(False if self.ctx.dpKaynak=='Program' else True)
+            self.radKaynak.toggled.connect(self.radClicked)
             self.cbxTekrarAcma.setChecked(True if self.ctx.tekraracma else False)
             self.spnTekrarEnGec.setValue(self.ctx.TekrarEnGec)
             self.btnKulSif.clicked.connect(self.ctx.kulAdSifAlAc)
@@ -65,6 +71,10 @@ class AppContext(ApplicationContext):
             self.exec_()
             debug = self.debug
             online = self.online
+
+        def radClicked(self):
+            if self.radKaynak.isChecked(): self.radKaynak.setText('Kaynak: Liste')
+            else: self.radKaynak.setText('Kaynak: Program')
 
         def logReset(self):
             if self.ctx.TimedMessageBox('Ayarlar',f'Log dosyası {logfile} içeriği silinecek, emin misiniz?',QMessageBox.Yes | QMessageBox.No , timeout=10, defaultBtn=QMessageBox.No, noExec=True).exec_()==QMessageBox.Yes:
@@ -92,6 +102,8 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('Ayar', 'TimerDk',str(self.ctx.TimerDk))
             self.ctx.GuncellemeDk=self.spnGuncellemeDk.value()
             self.ctx.ayarYaz('DersProgram', 'GuncellemeDk',str(self.ctx.GuncellemeDk))
+            self.ctx.dpKaynak='Liste' if self.radKaynak.isChecked() else 'Program'
+            self.ctx.ayarYaz('DersProgram', 'Kaynak', self.ctx.dpKaynak)
             self.ctx.tekraracma = self.cbxTekrarAcma.isChecked()
             self.ctx.ayarYaz('DersProgram', 'TekrarAcma', 'Evet' if self.ctx.tekraracma else 'Hayir')
             self.ctx.TekrarEnGec=self.spnTekrarEnGec.value()
@@ -126,6 +138,8 @@ class AppContext(ApplicationContext):
         ayarDeger = self.ctx.ayarOku('DersProgram', 'GuncellemeDk')
         if ayarDeger is None: ayarDeger = '120' #ders programı online güncelleme
         self.ctx.GuncellemeDk = int(ayarDeger)
+        self.ctx.dpKaynak = self.ctx.ayarOku('DersProgram', 'Kaynak')
+        if self.ctx.dpKaynak is None: self.ctx.dpKaynak='Program'
         ayarDeger = self.ctx.ayarOku('DersProgram', 'dersDakika')
         if ayarDeger is None: ayarDeger = '3' #dersten 3 dakika önce aç
         self.ctx.dersDakika = int(ayarDeger)
@@ -201,6 +215,44 @@ class AppContext(ApplicationContext):
             if debug: self.ctx.logYaz(f'responseYaz: {dosyaadi} yazıldı')
             dosya.write(icerik)
             dosya.close()
+
+    def bugun(self):
+        return datetime.now().strftime("%d.%m.%Y")
+
+    def bugunmu(self, gun1):
+        return gun1 == self.ctx.bugun()
+
+    def kalanDakika(self, saat1):
+        simdi = datetime.now().strftime('%H:%M')
+        alt = datetime.strptime(simdi, '%H:%M')
+        ust = datetime.strptime(saat1, '%H:%M')
+        if ust < alt:
+            kalan = -1 * self.ctx.gecenDakika(saat1)
+        else:
+            kalan = int((ust - alt).seconds / 60)
+        if debug: self.ctx.logYaz(
+            f"===kalanDakika: {kalan} dk. saat1={saat1} şimdi={simdi} <-{sys._getframe().f_back.f_code.co_name}")
+        return kalan
+
+    def gecenDakika(self, saat1, tarih=None, limitDakika=None, limitDisi=False):
+        simdi = datetime.now().strftime('%H:%M')
+        bugun = self.ctx.bugun()
+        ust = datetime.strptime(simdi, '%H:%M')
+        alt = datetime.strptime(saat1, '%H:%M')
+        if tarih is None: tarih = self.ctx.bugun()
+        if ust < alt:
+            gecengun=(datetime.strptime(tarih,'%d.%m.%Y') - datetime.strptime(bugun,'%d.%m.%Y')).days
+            ust = ust + (86400 * gecengun)
+        gecen = int((ust - alt).seconds / 60)
+        if debug: self.ctx.logYaz(
+            f"===gecenDakika: {gecen} dk. saat1={saat1} şimdi={simdi} <-{sys._getframe().f_back.f_code.co_name}")
+        if limitDakika is not None:
+            if limitDisi:
+                return True if gecen >= 0 and gecen >= limitDakika else False
+            else:
+                return True if gecen >= 0 and gecen <= limitDakika else False
+        else:
+            return gecen
 
     def kulAdSifAlAc(self):
         self.ctx.KulAdSifAl(self.ctx)
@@ -431,6 +483,9 @@ class AnaPencere(QMainWindow):
 
     @pyqtSlot()
     def scogezginiac(self):
+        self.ctx.anaKlasor = anaKlasor
+        self.ctx.online = online
+        self.ctx.online = False
         b = scoGezgini(self.ctx)
 
     def setupMenu(self):
@@ -545,6 +600,20 @@ class dersProgrami(QDialog):
         self.setLayout(self.layout)
         self.setGeometry(50, 50, 1000, 300)
 
+    def getCommonInfo(self, oturum):
+        cerezler = self.ctx.cerezOku()
+        cerezler['BREEZESESSION'] = oturum
+        sonuc = requests.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+        soup = BeautifulSoup(sonuc.text, 'lxml')
+        name = soup.find('name').text
+        login = soup.find('login').text
+        user = soup.find('user')
+        if user is not None:
+            user_id = user['user-id']
+        else:
+            user_id = None
+        return user_id, login, name
+
     def oturumGetir(self, cerezler):
         veri = {'page': 'get-badge-data', 'sg': ''}
         response = requests.post(adres + '/getMessagePage', data=veri, cookies=cerezler)
@@ -583,75 +652,67 @@ class dersProgrami(QDialog):
                 dosya.close()
             oturum = self.ctx.ayarOku('Login', 'oturum')
         soup = BeautifulSoup(yanit, features='html.parser')
-        bulunandersler = soup.find_all('div', {'class': 'card hover make-it-slow card-items'})
-        i = 0
-        for bulunanders in bulunandersler:
-            eleman = bulunanders.find('button', {'class': 'btn btn-outline-purple'})
-            dersler.append({'ders': eleman['dersadi']})
-            eleman = bulunanders.find('button', {'class': 'btn btn-outline-blue lesson-live'})
-            if eleman:
-                dersler[i]['link'] = eleman['data-link']
-            else:
-                dersler[i]['link'] = 'no-link'
-            eleman = bulunanders.find('span', {'class': 'title-date'})
-            if eleman:
-                dersler[i]['tarih'] = eleman.text
-            else:
-                dersler[i]['tarih'] = 'Oturum yok'
-            eleman = bulunanders.find('span', {'class': 'title-time'})
-            if eleman:
-                dersler[i]['saat'] = eleman.text
-            else:
-                dersler[i]['saat'] = '00:00'
-            #if dersler[i]['tarih'] < datetime.now().strftime("%d.%m.%Y") or dersler[i]['tarih'] == 'Oturum yok': #burada kontrole gerek yok
-            dersler[i]['acilsin'] = False
-            if debug: self.ctx.logYaz(f"dersProgramiGetir:{i} {dersler[i]}")
-            i += 1
+        if self.ctx.dpKaynak == 'Liste':
+            bulunandersler = soup.find_all('div', {'class': 'card hover make-it-slow card-items'})
+            i = 0
+            for bulunanders in bulunandersler:
+                eleman = bulunanders.find('button', {'class': 'btn btn-outline-purple'})
+                dersler.append({'ders': eleman['dersadi']})
+                eleman = bulunanders.find('button', {'class': 'btn btn-outline-blue lesson-live'})
+                if eleman:
+                    dersler[i]['link'] = eleman['data-link']
+                else:
+                    dersler[i]['link'] = 'no-link'
+                eleman = bulunanders.find('span', {'class': 'title-date'})
+                if eleman:
+                    dersler[i]['tarih'] = eleman.text
+                else:
+                    dersler[i]['tarih'] = 'Oturum yok'
+                eleman = bulunanders.find('span', {'class': 'title-time'})
+                if eleman:
+                    dersler[i]['saat'] = eleman.text
+                else:
+                    dersler[i]['saat'] = '00:00'
+                dersler[i]['acilsin'] = False
+                if debug: self.ctx.logYaz(f"dersProgramiGetir:{i} {dersler[i]}")
+                i += 1
+        else:
+            gunler = soup.find_all('li', {'class': 'events-group'})
+            i = 0
+            for gun in gunler:
+                bulunandersler = gun.find_all('li', {'class': 'single-event'})
+                tarih = gun.find('span').text[:5]+datetime.now().strftime('.%Y')
+                for bulunanders in bulunandersler:
+                    dersler.append({'saat': bulunanders['data-start']})
+                    dersler[i]['tarih'] = tarih
+                    eleman = bulunanders.find('span')
+                    dersler[i]['ders'] = eleman.text
+                    eleman = bulunanders.find('a', {'class': 'link_a btn green'})
+                    if eleman:
+                        dersler[i]['link']=eleman['onclick'].split("'")[1]
+                    else:
+                        dersler[i]['link'] = 'no-link'
+                    dersler[i]['acilsin'] = False
+                    if debug: self.ctx.logYaz(f"dersProgramiGetir:{i} {dersler[i]}")
+                    i += 1
         Inputs = soup.find_all('input', {'type': 'hidden'})
         for gizli in Inputs:
             if 'id' in gizli.attrs and gizli.attrs['id'] == 'ACSI':
                 # oturum = gizli.attrs['value']
                 # self.ctx.ayarYaz('Login', 'oturum',oturum)
                 if debug: self.ctx.logYaz(f'dersProgramiGetir: session={oturum}')
-            # else: oturum=None
-        self.ctx.ayarYaz('DersProgram', 'tarih', datetime.now().strftime("%d.%m.%Y"))
+        self.ctx.ayarYaz('DersProgram', 'tarih', self.ctx.bugun())
         self.ctx.ayarYaz('DersProgram', 'saat', datetime.now().strftime('%H:%M'))
         return oturum
 
     def dersAraliktami(self, saat1):
         aralikta = False
-        kalan=self.kalanDakika(saat1)
+        kalan=self.ctx.kalanDakika(saat1)
         aralik = self.ctx.dersDakika + (self.ctx.TimerDk if self.ctx.tekraracma else self.ctx.TekrarEnGec)
         aralikli= kalan + aralik - self.ctx.dersDakika
         if aralikli >= 0 and aralikli <= aralik:
             aralikta = True
         return kalan, aralikli, aralikta
-
-    def kalanDakika(self, saat1):
-        if datetime.strptime(saat1, '%H:%M') < datetime.strptime(datetime.now().strftime('%H:%M'), '%H:%M'):
-            kalan = -1 * self.gecenDakika(saat1)
-        else:
-            kalan = int((datetime.strptime(saat1, '%H:%M') - datetime.strptime(datetime.now().strftime('%H:%M'),
-                                                                               '%H:%M')).seconds / 60)
-        if debug: self.ctx.logYaz(
-            f"===kalanDakika: {kalan} dk. saat1={saat1} şimdi={datetime.now().strftime('%H:%M')} <-{sys._getframe().f_back.f_code.co_name}")
-        return kalan
-
-    def gecenDakika(self, saat1, limitDakika=None, limitDisi=False):
-        if datetime.strptime(datetime.now().strftime('%H:%M'), '%H:%M') < datetime.strptime(saat1, '%H:%M'):
-            gecen = -1 * self.kalanDakika(saat1)
-        else:
-            gecen = int((datetime.strptime(datetime.now().strftime('%H:%M'), '%H:%M') - datetime.strptime(saat1,
-                                                                                                          '%H:%M')).seconds / 60)
-        if debug: self.ctx.logYaz(
-            f"===gecenDakika: {gecen} dk. saat1={saat1} şimdi={datetime.now().strftime('%H:%M')} <-{sys._getframe().f_back.f_code.co_name}")
-        if limitDakika is not None:
-            if limitDisi:
-                return True if gecen >= 0 and gecen >= limitDakika else False
-            else:
-                return True if gecen >= 0 and gecen <= limitDakika else False
-        else:
-            return gecen
 
     def gecerliSaatler(self, saat1):
         if datetime.strptime(saat1, '%H:%M') >= datetime.strptime(self.ctx.minSaat, '%H:%M') and datetime.strptime(
@@ -664,9 +725,6 @@ class dersProgrami(QDialog):
                 f"<<<<<gecerliSaatler: min={self.ctx.minSaat} max={self.ctx.maxSaat} Şimdi={saat1}>>>>>")
             return False
 
-    def bugunmu(self, gun1):
-        return gun1 == datetime.now().strftime("%d.%m.%Y")
-
     def ders_program_kontrol(self):
         global ilkders, dersler
         bugunku = 999
@@ -675,7 +733,7 @@ class dersProgrami(QDialog):
             aralik = -1
             acilsin = False
             dersler[i]['acilsin'] = acilsin
-            if self.bugunmu(dersler[i]['tarih']):
+            if self.ctx.bugunmu(dersler[i]['tarih']):
                 kalan, aralik, acilsin = self.dersAraliktami(dersler[i]['saat'])
                 dersler[i]['kalan'] = str(kalan)
                 if aralik >= 0:
@@ -690,11 +748,11 @@ class dersProgrami(QDialog):
         return dersler
 
     def ders_program_guncelle(self):
-        if self.ctx.ayarOku('DersProgram', 'tarih') == datetime.now().strftime("%d.%m.%Y"):
-            saat1=self.ctx.ayarOku('DersProgram', 'saat')
-            if self.gecenDakika(saat1, limitDakika=self.ctx.GuncellemeDk, limitDisi=True):
-                if debug: self.ctx.logYaz(f"ders_program_guncelle: önceki güncelleme={saat1} periyod={self.ctx.GuncellemeDk}")
-                self.ders_programi_getir()
+        saat1 = self.ctx.ayarOku('DersProgram', 'saat')
+        tarih = self.ctx.ayarOku('DersProgram', 'tarih')
+        if self.ctx.gecenDakika(saat1, tarih = tarih, limitDakika = self.ctx.GuncellemeDk, limitDisi=True):
+            if debug: self.ctx.logYaz(f"ders_program_guncelle: önceki güncelleme={saat1} periyod={self.ctx.GuncellemeDk}")
+            self.ders_programi_getir()
         self.dersProgramDoldur()
 
     def dersAc(self, i):
@@ -703,12 +761,14 @@ class dersProgrami(QDialog):
         simdiki = dersler[i]['tarih'] + '/' + dersler[i]['saat']
         if son != simdiki or (son == simdiki and not self.ctx.tekraracma):
             oturum = self.ders_programi_getir()
+            dersurl = dersler[i]['link'] + '?session=' + oturum + '&proto=true'
             #webbrowser.open('http://sanal.yesevi.edu.tr/login?session=' + oturum)
-            webbrowser.open(dersler[i]['link'] + '?session=' + oturum + '&proto=true')
+            webbrowser.open(dersurl)
+            user_id, login, name = self.getCommonInfo(oturum)
             #flvView(self.ctx,dersler[i]['link'] + '?session=' + oturum + '&proto=true')
-            if debug: self.ctx.logYaz(dersler[i]['link'] + '?session=' + oturum + '&proto=true')
+            if debug: self.ctx.logYaz(dersurl)
             self.ctx.ayarYaz('DersProgram', 'SonAcilan', simdiki)
-            if debug: self.ctx.logYaz(f"DersAc:{dersler[i]['link']} açıldı, Tekrar {'açılmayacak' if self.ctx.tekraracma else 'açılabilir'}")
+            if debug: self.ctx.logYaz(f"DersAc:{dersler[i]['link']} açıldı, Tekrar {'açılmayacak' if self.ctx.tekraracma else 'açılabilir'} ogrno={login} user-id={user_id}")
         else:
             if debug: self.ctx.logYaz(f"DersAc:{dersler[i]['link']} daha önce açılmış, TekrarEnGec={self.ctx.TekrarEnGec}")
 
@@ -726,14 +786,13 @@ class dersProgrami(QDialog):
 
     def dakikadaBir(self):
         global dersler, ilkders
-        self.ders_program_guncelle()
         i = ilkders
-        if debug: self.ctx.logYaz(f"dakikadaBir: ders={i} {'açılacak' if dersler[i]['acilsin'] else 'açılmayacak'} tekrar kontrol={self.ctx.TimerDk} dk sonra")
-        if i > -1 and self.gecerliSaatler(datetime.now().strftime('%H:%M')):
-            if self.bugunmu( dersler[i]['tarih'] ):  # hala bugünde miyiz?
-                if dersler[i]['acilsin']:
-                    self.dersAc(i)
-                    dersler[i]['acilsin'] = False
+        if self.gecerliSaatler(datetime.now().strftime('%H:%M')):
+            self.ders_program_guncelle()
+            if debug: self.ctx.logYaz(f"dakikadaBir: ders={i} {'açılacak' if dersler[i]['acilsin'] else 'açılmayacak'} tekrar kontrol={self.ctx.TimerDk} dk sonra")
+            if i > -1 and self.ctx.bugunmu( dersler[i]['tarih'] ) and dersler[i]['acilsin']:
+                self.dersAc(i)
+                dersler[i]['acilsin'] = False
 
 
 if __name__ == '__main__':
