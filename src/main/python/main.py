@@ -1,17 +1,18 @@
 # coding=utf-8
 from fbs_runtime.application_context.PyQt5 import ApplicationContext, cached_property
 import base64
-import sys, os
+import sys
+# import os
 import webbrowser
-from datetime import datetime
+# from datetime import datetime
 import configparser
 import pickle
-import requests
+# import requests
 import requests.cookies
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QTimer, QTime, pyqtSlot
 #from PyQt5.QtWidgets import *
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 from sco import *
 
 online = True
@@ -59,6 +60,7 @@ class AppContext(ApplicationContext):
             self.spnTimerDk.setValue(self.ctx.TimerDk)
             self.spnGuncellemeDk.setValue(self.ctx.GuncellemeDk)
             self.radKaynak.setChecked(False if self.ctx.dpKaynak=='Program' else True)
+            self.radClicked()
             self.radKaynak.toggled.connect(self.radClicked)
             self.cbxTekrarAcma.setChecked(True if self.ctx.tekraracma else False)
             self.spnTekrarEnGec.setValue(self.ctx.TekrarEnGec)
@@ -120,6 +122,7 @@ class AppContext(ApplicationContext):
             with open(logfile, 'w') as dosya:
                 dosya.write('Yeni Dosya')
                 dosya.close()
+        self.ctx.session=  None
         debug = self.ctx.ayarOku('Ayar', 'debug')
         if debug == 'Evet':
             debug = True  # konsola bilgi yaz
@@ -211,7 +214,7 @@ class AppContext(ApplicationContext):
         return cerezler
 
     def responseYaz(self, dosyaadi, icerik):
-        with open(dosyaadi, 'w', encoding="utf8") as dosya:
+        with open(dosyaadi, 'w', encoding="utf-8") as dosya:
             if debug: self.ctx.logYaz(f'responseYaz: {dosyaadi} yazıldı')
             dosya.write(icerik)
             dosya.close()
@@ -332,16 +335,21 @@ class AppContext(ApplicationContext):
         if debug: self.ctx.TimedMessageBox('ayarLogin', 'Kullanıcı adı/şifre Okundu', QMessageBox.Ok, 3)
         return kullanici
 
+    def getSession(self):
+        if self.ctx.session is None: self.ctx.session=requests.session()
+        if debug: print(f"getSession: {self.ctx.session}")
+        return self.ctx.session
+
     def loginKontrol(self):
         cerezler = self.cerezOku()
         try:
             if online:
-                yanit = requests.get(adres + '/mesajlar', cookies=cerezler)
+                yanit = self.ctx.getSession().get(adres + '/mesajlar', cookies=cerezler)
                 sayfa = yanit.text
                 self.responseYaz(anaKlasor + '\\oys-mesaj.html', sayfa)
                 durum = yanit.status_code
             else:
-                with open(anaKlasor + '\\oys-mesaj.html', 'r', encoding="utf8") as dosya:
+                with open(anaKlasor + '\\oys-mesaj.html', 'r', encoding="utf-8") as dosya:
                     durum = 'Offline <200>'
                     sayfa = dosya.read()
                     dosya.close()
@@ -373,11 +381,10 @@ class AppContext(ApplicationContext):
     def login(self):
         kullanici = self.ayarLogin()
         if online:
-            # sayfa = urllib.request.urlopen(adres)
-            sayfa = requests.get(adres).text
+            sayfa = self.ctx.getSession.get(adres).text
             self.responseYaz(anaKlasor + '\\oys-ana.html', sayfa)
         else:
-            with open(anaKlasor + '\\oys-ana.html', 'r', encoding="utf8") as dosya:
+            with open(anaKlasor + '\\oys-ana.html', 'r', encoding="utf-8") as dosya:
                 sayfa = dosya.read()
                 dosya.close()
         soup = BeautifulSoup(sayfa, features='html.parser')
@@ -394,13 +401,13 @@ class AppContext(ApplicationContext):
                 kullanici[kullanici['deger_adi']] = gizli.attrs['value']
         # if debug: self.ctx.logYaz(f'login: kullanici={kullanici}') #şifreyi açık gösteriyor, gerekmezse kaldır
         if online:
-            response = requests.post(adres + '/login', data=kullanici)
+            response = self.ctx.getSession.post(adres + '/login', data=kullanici)
             sayfa = response.text
             self.responseYaz(anaKlasor + '\\oys-login.html', sayfa)
             # if debug: print('login: sayfa=', sayfa)
             cerezler = response.cookies
         else:
-            with open(anaKlasor + '\\oys-login.html', 'r', encoding="utf8") as dosya:
+            with open(anaKlasor + '\\oys-login.html', 'r', encoding="utf-8") as dosya:
                 sayfa = dosya.read()
                 dosya.close()
                 cerezler = self.cerezOku()
@@ -485,7 +492,9 @@ class AnaPencere(QMainWindow):
     def scogezginiac(self):
         self.ctx.anaKlasor = anaKlasor
         self.ctx.online = online
-        self.ctx.online = False
+        self.ctx.debug = debug
+        self.ctx.getCommonInfo=dersProgrami.getCommonInfo
+        self.ctx.oturumGetir=dersProgrami.oturumGetir
         b = scoGezgini(self.ctx)
 
     def setupMenu(self):
@@ -600,35 +609,45 @@ class dersProgrami(QDialog):
         self.setLayout(self.layout)
         self.setGeometry(50, 50, 1000, 300)
 
-    def getCommonInfo(self, oturum):
+    def getCommonInfo(self, oturum, session=None):
         cerezler = self.ctx.cerezOku()
         cerezler['BREEZESESSION'] = oturum
-        sonuc = requests.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+        if session is None:
+            sonuc = requests.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+        else:
+            sonuc = session.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+        yenicerez= sonuc.cookies
+        yenicerez['BREEZESESSION'] = oturum
+        cerezler['BreezeCCookie'] = yenicerez['BreezeCCookie']
+        self.ctx.cerezYaz(cerezler)
         soup = BeautifulSoup(sonuc.text, 'lxml')
-        name = soup.find('name').text
-        login = soup.find('login').text
+        name = soup.find('name')
+        if name: name = name.text
+        login = soup.find('login')
+        if login: login = login.text
         user = soup.find('user')
         if user is not None:
             user_id = user['user-id']
         else:
             user_id = None
-        return user_id, login, name
+        return user_id, login, name, yenicerez
 
-    def oturumGetir(self, cerezler):
-        veri = {'page': 'get-badge-data', 'sg': ''}
-        response = requests.post(adres + '/getMessagePage', data=veri, cookies=cerezler)
-        sonuc = response.json()
-        mesaj = eval(sonuc['Deger'])
-        if debug: print(f"oturumGetir: Gelen Mesaj Sayısı={mesaj['GELEN']}, Giden Mesaj={mesaj['GIDEN']}")
-        if mesaj['GELEN'] > 0:
-            self.ctx.main_window.lblMesaj.setText(f"Mesaj: {mesaj['GELEN']}")
-            self.ctx.TimedMessageBox("oturumGetir", f"Mesajınız Var ({mesaj['GELEN']})")
-        else:
-            self.ctx.main_window.lblMesaj.setText(f"Mesaj: {0}")
-        self.ctx.ayarYaz('Login', 'Mesaj', str(mesaj['GELEN']))
+    def oturumGetir(self, cerezler, mesajGetir=True):
+        if mesajGetir:
+            veri = {'page': 'get-badge-data', 'sg': ''}
+            yanit = self.ctx.getSession().post(adres + '/getMessagePage', data=veri, cookies=cerezler)
+            sonuc = yanit.json()
+            mesaj = eval(sonuc['Deger'])
+            if debug: print(f"oturumGetir: Gelen Mesaj Sayısı={mesaj['GELEN']}, Giden Mesaj={mesaj['GIDEN']}")
+            if mesaj['GELEN'] > 0:
+                self.ctx.main_window.lblMesaj.setText(f"Mesaj: {mesaj['GELEN']}")
+                self.ctx.TimedMessageBox("oturumGetir", f"Mesajınız Var ({mesaj['GELEN']})")
+            else:
+                self.ctx.main_window.lblMesaj.setText(f"Mesaj: {0}")
+            self.ctx.ayarYaz('Login', 'Mesaj', str(mesaj['GELEN']))
         veri = {'page': 'GTACSI', 'sg': ''}
-        response = requests.post(adres + '/getMessagePage', data=veri, cookies=cerezler)
-        sonuc = response.json()
+        yanit = self.ctx.getSession().post(adres + '/getMessagePage', data=veri, cookies=cerezler)
+        sonuc = yanit.json()
         oturum = sonuc['Deger']
         if debug: self.ctx.logYaz(f'oturumGetir: session={oturum}')
         self.ctx.ayarYaz('Login', 'oturum', oturum)
@@ -642,12 +661,12 @@ class dersProgrami(QDialog):
                 if debug: self.ctx.logYaz("dersProgramiGetir: Giriş Yapılmadı, iptal?")
                 self.ctx.login()
             cerezler = self.ctx.cerezOku()
-            response = requests.post(adres + '/ders_islemleri_ekran', cookies=cerezler)
+            response = self.ctx.getSession().post(adres + '/ders_islemleri_ekran', cookies=cerezler)
             yanit = response.text
             self.ctx.responseYaz(anaKlasor + '\\oys-ders.html', yanit)
             oturum = self.oturumGetir(cerezler)
         else:
-            with open(anaKlasor + '\\oys-ders.html', 'r', encoding="utf8") as dosya:
+            with open(anaKlasor + '\\oys-ders.html', 'r', encoding="utf-8") as dosya:
                 yanit = dosya.read()
                 dosya.close()
             oturum = self.ctx.ayarOku('Login', 'oturum')
@@ -727,7 +746,7 @@ class dersProgrami(QDialog):
 
     def ders_program_kontrol(self):
         global ilkders, dersler
-        bugunku = 999
+        bugunku = 1440
         ilkders=-1
         for i in range(len(dersler)):
             aralik = -1
@@ -743,7 +762,7 @@ class dersProgrami(QDialog):
                         dersler[i]['acilsin'] = acilsin
             else:
                 dersler[i]['kalan'] = '0'
-            if debug: print(f"ders_program_kontrol: i={i} ilkders={ilkders:+1d} aralikta mi={'Evet' if acilsin else 'Hayır'} aralık={aralik:+4d} bugunku={bugunku:+4d}", dersler[i])
+            if debug: print(f"ders_program_kontrol: i={i} ilkders={ilkders:+1d} aralikta mi={'Evet' if acilsin else 'Hayır'} aralık={aralik:+4d} bugunku={bugunku:+5d}", dersler[i])
         if debug: self.ctx.logYaz(f"ders_program_kontrol: ilkders={ilkders} aralikta {'' if acilsin else 'değil'}")
         return dersler
 
@@ -793,6 +812,7 @@ class dersProgrami(QDialog):
             if i > -1 and self.ctx.bugunmu( dersler[i]['tarih'] ) and dersler[i]['acilsin']:
                 self.dersAc(i)
                 dersler[i]['acilsin'] = False
+        else: self.dersProgramDoldur()
 
 
 if __name__ == '__main__':
