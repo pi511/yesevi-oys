@@ -356,12 +356,14 @@ class AppContext(ApplicationContext):
             soup = BeautifulSoup(sayfa, features='html.parser')
             if soup.find('div', {'class': 'alert alert-danger'}):
                 if debug: self.ctx.logYaz("loginKontrol: Kullanıcı/Şifre hatalı!!! ")
+                self.main_window.btn_Login.setVisible(True)
                 self.ctx.loggedIn = False
                 return None
             if soup.find('span', {'class': 'username username-hide-on-mobile'}):
                 kullanici_adi = soup.find('span', {'class': 'username username-hide-on-mobile'}).text
                 self.ayarYaz('Login', 'kullanici_adi', kullanici_adi)
                 self.ctx.loggedIn = True
+                self.main_window.btn_Login.setVisible(False)
                 if debug: self.ctx.logYaz(f'loginKontrol: kullanici_adi={kullanici_adi} status={durum}')
             else:
                 if debug: self.ctx.logYaz('loginKontrol: kullanici_adi bulunamadı! Giriş yapın.')
@@ -370,10 +372,12 @@ class AppContext(ApplicationContext):
                 kullanici_adi = None
         except requests.exceptions.RequestException as e:
             if debug: self.ctx.logYaz(f'loginKontrol: HATA e={e}')
+            self.main_window.btn_Login.setVisible(True)
             self.ctx.loggedIn = False
             kullanici_adi = self.login()
         except requests.HTTPError as e:
             if debug: self.ctx.logYaz(f'loginKontrol: HATA e={e}')
+            self.main_window.btn_Login.setVisible(True)
             self.ctx.loggedIn = False
             kullanici_adi = self.login()
         return kullanici_adi
@@ -381,7 +385,7 @@ class AppContext(ApplicationContext):
     def login(self):
         kullanici = self.ayarLogin()
         if online:
-            sayfa = self.ctx.getSession.get(adres).text
+            sayfa = self.ctx.getSession().get(adres).text
             self.responseYaz(anaKlasor + '\\oys-ana.html', sayfa)
         else:
             with open(anaKlasor + '\\oys-ana.html', 'r', encoding="utf-8") as dosya:
@@ -401,7 +405,7 @@ class AppContext(ApplicationContext):
                 kullanici[kullanici['deger_adi']] = gizli.attrs['value']
         # if debug: self.ctx.logYaz(f'login: kullanici={kullanici}') #şifreyi açık gösteriyor, gerekmezse kaldır
         if online:
-            response = self.ctx.getSession.post(adres + '/login', data=kullanici)
+            response = self.ctx.getSession().post(adres + '/login', data=kullanici)
             sayfa = response.text
             self.responseYaz(anaKlasor + '\\oys-login.html', sayfa)
             # if debug: print('login: sayfa=', sayfa)
@@ -447,7 +451,7 @@ class AnaPencere(QMainWindow):
         self.anaVLayout = QVBoxLayout(self.anaform)
         self.anaLayout = QHBoxLayout(self.anaform)
         self.anaVLayout.addLayout(self.anaLayout)
-        self.anaform.setLayout(self.anaLayout)
+        # self.anaform.setLayout(self.anaLayout)
         self.setCentralWidget(self.anaform)
         self.lblOnOff = QLabel('(Online)' if online else '(Offline)', self.anaform)
         self.anaLayout.addWidget(self.lblOnOff)
@@ -491,6 +495,7 @@ class AnaPencere(QMainWindow):
     @pyqtSlot()
     def scogezginiac(self):
         self.ctx.anaKlasor = anaKlasor
+        os.makedirs(anaKlasor + '\\sco', exist_ok=True)
         self.ctx.online = online
         self.ctx.debug = debug
         self.ctx.getCommonInfo=dersProgrami.getCommonInfo
@@ -734,15 +739,13 @@ class dersProgrami(QDialog):
         return kalan, aralikli, aralikta
 
     def gecerliSaatler(self, saat1):
+        gecerli = False
+        logmsj = f">>>>>gecerliSaatler: min={self.ctx.minSaat} max={self.ctx.maxSaat} Şimdi={saat1}<<<<<"
         if datetime.strptime(saat1, '%H:%M') >= datetime.strptime(self.ctx.minSaat, '%H:%M') and datetime.strptime(
                 saat1, '%H:%M') <= datetime.strptime(self.ctx.maxSaat, '%H:%M'):
-            if debug: self.ctx.logYaz(
-                f">>>>>gecerliSaatler: min={self.ctx.minSaat} max={self.ctx.maxSaat} Şimdi={saat1}<<<<<")
-            return True
-        else:
-            if debug: self.ctx.logYaz(
-                f"<<<<<gecerliSaatler: min={self.ctx.minSaat} max={self.ctx.maxSaat} Şimdi={saat1}>>>>>")
-            return False
+            gecerli = True
+        if debug: self.ctx.logYaz(logmsj)
+        return gecerli
 
     def ders_program_kontrol(self):
         global ilkders, dersler
