@@ -623,7 +623,8 @@ class dersProgrami(QDialog):
             sonuc = session.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
         yenicerez= sonuc.cookies
         yenicerez['BREEZESESSION'] = oturum
-        cerezler['BreezeCCookie'] = yenicerez['BreezeCCookie']
+        if 'BreezeCCookie' in yenicerez:
+            cerezler['BreezeCCookie'] = yenicerez['BreezeCCookie']
         self.ctx.cerezYaz(cerezler)
         soup = BeautifulSoup(sonuc.text, 'lxml')
         name = soup.find('name')
@@ -732,19 +733,20 @@ class dersProgrami(QDialog):
     def dersAraliktami(self, saat1):
         aralikta = False
         kalan=self.ctx.kalanDakika(saat1)
-        aralik = self.ctx.dersDakika + (self.ctx.TimerDk if self.ctx.tekraracma else self.ctx.TekrarEnGec)
-        aralikli= kalan + aralik - self.ctx.dersDakika
-        if aralikli >= 0 and aralikli <= aralik:
-            aralikta = True
+        engec = self.ctx.TimerDk if self.ctx.tekraracma else self.ctx.TekrarEnGec
+        aralikli= kalan + engec
+        if (kalan >= 0 and kalan <= self.ctx.dersDakika) or (kalan < 0 and kalan <= engec):
+            aralikta=True
         return kalan, aralikli, aralikta
 
     def gecerliSaatler(self, saat1):
         gecerli = False
-        logmsj = f">>>>>gecerliSaatler: min={self.ctx.minSaat} max={self.ctx.maxSaat} Şimdi={saat1}<<<<<"
+        sgn = '-----'
         if datetime.strptime(saat1, '%H:%M') >= datetime.strptime(self.ctx.minSaat, '%H:%M') and datetime.strptime(
                 saat1, '%H:%M') <= datetime.strptime(self.ctx.maxSaat, '%H:%M'):
             gecerli = True
-        if debug: self.ctx.logYaz(logmsj)
+            sgn = '====='
+        if debug: self.ctx.logYaz(f"{sgn}gecerliSaatler: min={self.ctx.minSaat} max={self.ctx.maxSaat} Şimdi={saat1}{sgn}")
         return gecerli
 
     def ders_program_kontrol(self):
@@ -786,7 +788,7 @@ class dersProgrami(QDialog):
             dersurl = dersler[i]['link'] + '?session=' + oturum + '&proto=true'
             #webbrowser.open('http://sanal.yesevi.edu.tr/login?session=' + oturum)
             webbrowser.open(dersurl)
-            user_id, login, name = self.getCommonInfo(oturum)
+            user_id, login, name, yenicerez = self.getCommonInfo(oturum)
             #flvView(self.ctx,dersler[i]['link'] + '?session=' + oturum + '&proto=true')
             if debug: self.ctx.logYaz(dersurl)
             self.ctx.ayarYaz('DersProgram', 'SonAcilan', simdiki)
@@ -823,8 +825,5 @@ if __name__ == '__main__':
     exit_code = appctxt.run()  # 5. Invoke run()
     sys.exit(exit_code)
 
-'''TODO
-'''
-'''INFO
-http://sanal.yesevi.edu.tr/api/xml?action=common-info   breezesession almanın tavsiye edilen yolu
-'''
+
+# TODO: http://sanal.yesevi.edu.tr/api/xml?action=common-info   breezesession almanın tavsiye edilen yolu, getCommonInfo

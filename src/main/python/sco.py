@@ -15,6 +15,7 @@ import urllib.parse
 adres = 'http://sanal.yesevi.edu.tr'
 debug = False
 ONLINESURE = 10
+DERSSURESI = -90
 
 class scoGezgini(QDialog):
     def __init__(self, ctx):
@@ -86,17 +87,18 @@ class scoGezgini(QDialog):
             myMeetings[i]['sco-id']= meeting.attrib['sco-id']
             for item in meeting:
                 if debug and i==0: print(f"getMyMeetings: row-id={meeting.attrib['row-id']} tag{item.tag}= text={item.text}")
-                if item.tag=='name': myMeetings[i]['name']=item.text.strip()
-                if item.tag=='description': myMeetings[i]['desc']=item.text.strip()
-                if item.tag=='url-path': myMeetings[i]['url']=item.text
+                if item.tag=='name': myMeetings[i]['name'] = item.text.strip()
+                if item.tag=='description': myMeetings[i]['desc'] = item.text.strip()
+                if item.tag=='url-path': myMeetings[i]['url'] = item.text
                 if item.tag in ['date-begin','date-end']:
                     tarih=item.text[:10]
                     # tarih=tarih.split('-')
                     # tarih=tarih[2]+"-"+tarih[1]+"-"+tarih[0]
                     tarih=datetime.strptime(tarih,'%Y-%m-%d')
-                if item.tag=='date-begin': myMeetings[i]['dateB']=tarih
-                if item.tag=='date-end': myMeetings[i]['dateE']=tarih
-                if item.tag=='expired': myMeetings[i]['expired']=item.text
+                if item.tag=='date-begin': myMeetings[i]['dateB'] = tarih
+                if item.tag=='date-end': myMeetings[i]['dateE'] = tarih
+                if item.tag=='date-end': myMeetings[i]['saat'] = item.text[11:5]
+                if item.tag=='expired': myMeetings[i]['expired'] = item.text
             if debug and (i % 11)==0: print(f"getMyMeetings: {myMeetings[i]}")
             i += 1
         self.ctx.logYaz(f"getMyMeetings: {i} adet meeting okundu")
@@ -105,14 +107,15 @@ class scoGezgini(QDialog):
     def takvimDoldur(self):
         format= QTextCharFormat()
         format.setFontWeight(QFont.Bold)
-        minDate=self.myMeetings[0]['dateB']
-        maxDate=self.myMeetings[0]['dateE']
+        self.minDate=self.myMeetings[0]['dateB']
+        self.maxDate=self.myMeetings[0]['dateE']
         for i in range(1, self.mCount):
-            if self.myMeetings[i]['dateB'] < minDate: minDate=self.myMeetings[i]['dateB']
-            if self.myMeetings[i]['dateE'] > maxDate: maxDate=self.myMeetings[i]['dateB']
+            if self.myMeetings[i]['dateB'] < self.minDate: self.minDate=self.myMeetings[i]['dateB']
+            if self.myMeetings[i]['dateE'] > self.maxDate: self.maxDate=self.myMeetings[i]['dateB']
             if self.myMeetings[i]['expired'] : self.calTakvim.setDateTextFormat(self.myMeetings[i]['dateB'],format)
-        self.calTakvim.setMinimumDate(minDate)
-        self.calTakvim.setMaximumDate(maxDate)
+        self.calTakvim.setMinimumDate(self.minDate)
+        self.calTakvim.setMaximumDate(self.maxDate)
+        # self.calTakvim.setMaximumDate(datetime.today())
         self.calTakvim.showToday()
 
     def calClicked(self):
@@ -122,6 +125,7 @@ class scoGezgini(QDialog):
             if self.calTakvim.selectedDate() == self.myMeetings[i]['dateB']:
                 self.lstDersler.addItem(self.myMeetings[i]['name'])
                 self.dersler.append(self.myMeetings[i]['sco-id'])
+                self.MyMeeting = i
         # self.lstDosyalar
 
     def getDosyalar(self, scoId, oturum=None):
@@ -179,6 +183,9 @@ class scoGezgini(QDialog):
 
     def dersClicked(self, index):
         self.lstDosyalar.clear()
+        if self.ctx.bugunmu(self.MyMeetings[self.MyMeeting]['dataE']) and self.ctx.kalanDakika(self.MyMeetings[self.MyMeeting]['saat']) >= DERSSURESI:
+            if debug: print(f"dersClicked: Ders henüz işlenmemiş...")
+            return
         c, dosyalar=self.getDosyalar(self.dersler[index.row()])
         if c is None:
             self.onlineOl()
@@ -205,8 +212,7 @@ class scoGezgini(QDialog):
         options |= QFileDialog.DontUseNativeDialog
         self.onlineOl()
         dosyaadi = self.dosyalar[d]['dosyaadi']
-        dosyaadi = urllib.request.pathname2url(dosyaadi)
-        url = f"{adres}{self.dosyalar[d]['url']}source/{dosyaadi}" + '?session=' + self.oturum
+        url = f"{adres}{self.dosyalar[d]['url']}source/{urllib.request.pathname2url(dosyaadi)}" + '?session=' + self.oturum
         yanit= self.ctx.session.get(url, headers=self.setHeaders())
         durum = yanit.status_code
         dosyaboyu = yanit.headers.get('content-length')
@@ -217,7 +223,7 @@ class scoGezgini(QDialog):
         # import urllib.request
         # yanit = urllib.request.urlopen(url)
         # durum=yanit.getcode()
-        self.ctx.TimedMessageBox('scoGezgini', f'Dosya varsa uzun sürebilir, lütfen bekleyiniz.', QMessageBox.Ok, 3)
+        self.ctx.TimedMessageBox('scoGezgini', f'Ekran uzun süre hareketsiz kalabilir, lütfen bekleyiniz.', QMessageBox.Ok, 3)
         soup=BeautifulSoup(yanit.text[:100],'html.parser')
         sonuc=soup.find('title')
         if sonuc: sonuc=sonuc.text
