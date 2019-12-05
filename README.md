@@ -35,7 +35,7 @@ Python içinden kullanabilmek için ilgili modülleri kurmalısınız. (pip inst
 exe'ye çevirmek için fbs modülünü indirip, aynı klasör yapısını oluşturun. Scriptlerden sanal ortamı activate.bat ile aktifleştirin.
 "fbs freeze" ile exe'ye çevirebilirsiniz.
 
-Veya kurulum paketi ile windowsa kurup kullanabilirsiniz. (windows 10 ve 2012'da denendi)
+Veya <a href=https://1drv.ms/u/s!AnY5SpLroMRqlZQDVdwOXJoE7Oy0DQ> kurulum paketi</a> ile windowsa kurup kullanabilirsiniz. (windows 10 ve 2012'da denendi)
 
 
 NOT: selenium driver kullanmadığım için, çerezleri varsayılan tarayıcıya aktarmıyor şimdilik. O yüzden varsayılan tarayıcıda oys'de oturum açın, oturum kapanmasın diye arşivden bir ders izleyin. Böylece otomatik izleme sağlıklı çalışacaktır.
