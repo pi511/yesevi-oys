@@ -26,11 +26,11 @@ class scoGezgini(QDialog):
         debug = self.ctx.debug
         self.dersler=[]
         self.onlineOldu= False
-        self.mCount, self.myMeetings=self.getMyMeetings()
+        self.mCount, self.MyMeetings=self.getMyMeetings()
         if self.mCount is None:
             if debug: print(f"scoGezgini: Düzgün xml bulunamadı, online olunacak!")
             self.onlineOl()
-            self.mCount, self.myMeetings = self.getMyMeetings(self.oturum)
+            self.mCount, self.MyMeetings = self.getMyMeetings(self.oturum)
         self.takvimDoldur()
         self.calTakvim.clicked.connect(self.calClicked)
         self.lstDersler.clicked.connect(self.dersClicked)
@@ -42,6 +42,7 @@ class scoGezgini(QDialog):
             if int((self.onlinesaat - datetime.now()).seconds) < (ONLINESURE * 60):
                 user_id, login, name, self.cerezler = self.ctx.getCommonInfo(self, self.oturum, self.ctx.session)
                 return self.oturum
+        self.ctx.online = True
         if self.ctx.loginKontrol() is None:
             self.ctx.login()
         self.cerezler = self.ctx.cerezOku()
@@ -49,7 +50,6 @@ class scoGezgini(QDialog):
         user_id, login, name, self.cerezler = self.ctx.getCommonInfo(self, self.oturum, self.ctx.session)
         self.cerezler['BREEZESESSION'] = self.oturum
         if debug: print(f"onlineOl: user_id={user_id} name={name} login={login} oturum={self.oturum} cerezler={self.cerezler}")
-        self.ctx.online = True
         self.onlinesaat= datetime.now()
         self.onlineOldu= True
         return self.oturum
@@ -91,13 +91,11 @@ class scoGezgini(QDialog):
                 if item.tag=='description': myMeetings[i]['desc'] = item.text.strip()
                 if item.tag=='url-path': myMeetings[i]['url'] = item.text
                 if item.tag in ['date-begin','date-end']:
-                    tarih=item.text[:10]
-                    # tarih=tarih.split('-')
-                    # tarih=tarih[2]+"-"+tarih[1]+"-"+tarih[0]
-                    tarih=datetime.strptime(tarih,'%Y-%m-%d')
+                    tarih = item.text[:10]
+                    tarih=datetime.strptime(tarih,'%Y-%m-%d') # format farklı burada self.ctx.gun2date() olmuyor
                 if item.tag=='date-begin': myMeetings[i]['dateB'] = tarih
                 if item.tag=='date-end': myMeetings[i]['dateE'] = tarih
-                if item.tag=='date-end': myMeetings[i]['saat'] = item.text[11:5]
+                if item.tag=='date-end': myMeetings[i]['saat'] = item.text[11:16]
                 if item.tag=='expired': myMeetings[i]['expired'] = item.text
             if debug and (i % 11)==0: print(f"getMyMeetings: {myMeetings[i]}")
             i += 1
@@ -107,12 +105,12 @@ class scoGezgini(QDialog):
     def takvimDoldur(self):
         format= QTextCharFormat()
         format.setFontWeight(QFont.Bold)
-        self.minDate=self.myMeetings[0]['dateB']
-        self.maxDate=self.myMeetings[0]['dateE']
+        self.minDate=self.MyMeetings[0]['dateB']
+        self.maxDate=self.MyMeetings[0]['dateE']
         for i in range(1, self.mCount):
-            if self.myMeetings[i]['dateB'] < self.minDate: self.minDate=self.myMeetings[i]['dateB']
-            if self.myMeetings[i]['dateE'] > self.maxDate: self.maxDate=self.myMeetings[i]['dateB']
-            if self.myMeetings[i]['expired'] : self.calTakvim.setDateTextFormat(self.myMeetings[i]['dateB'],format)
+            if self.MyMeetings[i]['dateB'] < self.minDate: self.minDate=self.MyMeetings[i]['dateB']
+            if self.MyMeetings[i]['dateE'] > self.maxDate: self.maxDate=self.MyMeetings[i]['dateB']
+            if self.MyMeetings[i]['expired'] : self.calTakvim.setDateTextFormat(self.MyMeetings[i]['dateB'], format)
         self.calTakvim.setMinimumDate(self.minDate)
         self.calTakvim.setMaximumDate(self.maxDate)
         # self.calTakvim.setMaximumDate(datetime.today())
@@ -122,10 +120,10 @@ class scoGezgini(QDialog):
         self.lstDersler.clear()
         self.dersler=[]
         for i in range(0, self.mCount):
-            if self.calTakvim.selectedDate() == self.myMeetings[i]['dateB']:
-                self.lstDersler.addItem(self.myMeetings[i]['name'])
-                self.dersler.append(self.myMeetings[i]['sco-id'])
-                self.MyMeeting = i
+            if self.calTakvim.selectedDate() == self.MyMeetings[i]['dateB']:
+                self.lstDersler.addItem(self.MyMeetings[i]['name'])
+                self.dersler.append(self.MyMeetings[i]['sco-id'])
+                self.MyMeeting = self.MyMeetings[i]
         # self.lstDosyalar
 
     def getDosyalar(self, scoId, oturum=None):
@@ -183,8 +181,11 @@ class scoGezgini(QDialog):
 
     def dersClicked(self, index):
         self.lstDosyalar.clear()
-        if self.ctx.bugunmu(self.MyMeetings[self.MyMeeting]['dataE']) and self.ctx.kalanDakika(self.MyMeetings[self.MyMeeting]['saat']) >= DERSSURESI:
-            if debug: print(f"dersClicked: Ders henüz işlenmemiş...")
+        cik= False
+        if self.ctx.bugunmu( self.ctx.date2gun( self.MyMeeting['dateE'] ) ) and self.ctx.kalanDakika( self.MyMeeting['saat'] ) >= DERSSURESI: cik = True
+        elif self.MyMeeting['dateE'] > datetime.now(): cik = True
+        if cik:
+            if debug: print(f"dersClicked: Ders henüz işlenmemiş...tarih={ self.ctx.date2gun( self.MyMeeting['dateE'] ) } saat={self.MyMeeting['saat']}")
             return
         c, dosyalar=self.getDosyalar(self.dersler[index.row()])
         if c is None:

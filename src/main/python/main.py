@@ -15,7 +15,6 @@ from PyQt5.QtCore import Qt, QTimer, QTime, pyqtSlot
 # from bs4 import BeautifulSoup
 from sco import *
 
-online = True
 debug = False
 anaKlasor = 'c:\\pi\\temp'
 ayarlar = anaKlasor + '\\oys-yesevi.ini'
@@ -30,6 +29,7 @@ ilkders = -1
 class AppContext(ApplicationContext):
     def __init__(self):
         super(AppContext, self).__init__()
+        self.online = True
         #global değişkenleri buraya alabilirsin
 
     def run(self):
@@ -42,19 +42,29 @@ class AppContext(ApplicationContext):
         self.app.setApplicationName('OYS')
         return AnaPencere(self)
 
+    def setOnline(self,online):
+        if online == 'Hayir':
+            self.ctx.online = False  # sayfaları internetten mi alsın, kayıttan mı?
+        else:
+            self.ctx.online = True
+        return self.ctx.online
+
+    def getOnline(self, online=None):
+        return 'Evet' if (self.ctx.online if online is None else online) else 'Hayir'
+
     class Ayarlar(QDialog):
         def __init__(self, ctx):
-            global online, debug
+            global debug
             super(QDialog, self).__init__()
             self.ctx = ctx
             # uic.loadUi('Ayarlar.ui',self)
             uic.loadUi(self.ctx.get_resource('Ayarlar.ui'), self)
             self.debug = debug
-            self.online = online
             self.dersDakika = self.ctx.dersDakika
             self.spnDakika.setValue(self.ctx.dersDakika)
             self.cbxDebug.setChecked(debug)
-            self.cbxOnline.setChecked(online)
+            self.online = self.ctx.online
+            self.cbxOnline.setChecked(self.online)
             self.minSaat = self.ctx.minSaat
             self.maxSaat = self.ctx.maxSaat
             self.spnTimerDk.setValue(self.ctx.TimerDk)
@@ -72,7 +82,7 @@ class AppContext(ApplicationContext):
             self.buttonBox.rejected.connect(self.cancel)
             self.exec_()
             debug = self.debug
-            online = self.online
+            self.ctx.online = self.online
 
         def radClicked(self):
             if self.radKaynak.isChecked(): self.radKaynak.setText('Kaynak: Liste')
@@ -93,9 +103,9 @@ class AppContext(ApplicationContext):
             #print('Ayarlar: debug=', 'Evet' if self.debug else 'Hayir')
             self.ctx.ayarYaz('Ayar', 'debug', 'Evet' if self.debug else 'Hayir')
             self.online = self.cbxOnline.isChecked()
-            self.ctx.ayarYaz('Ayar', 'online', 'Evet' if self.online else 'Hayir')
+            self.ctx.ayarYaz('Ayar', 'online', self.ctx.getOnline(self.online))
             self.ctx.main_window.lblOnOff.setText('(Online)' if self.online else '(Offline)')
-            if debug: self.ctx.logYaz(f"Ayarlar: Online= {'Evet' if self.online else 'Hayir'}")
+            if debug: self.ctx.logYaz(f"Ayarlar: Online= {self.ctx.getOnline(self.online)}")
             self.ctx.minSaat = self.timMinSaat.time().toString('hh:mm')
             self.ctx.ayarYaz('DersProgram', 'minSaat', self.ctx.minSaat)
             self.ctx.maxSaat = self.timMaxSaat.time().toString('hh:mm')
@@ -116,7 +126,7 @@ class AppContext(ApplicationContext):
         if debug: self.ctx.logYaz(f'ayarlariAc: Ayarlar açıldı/kapandı.')
 
     def ayarlariOku(self):
-        global online, debug
+        global debug
         os.makedirs(anaKlasor, exist_ok=True)
         if not os.path.isfile(logfile):
             with open(logfile, 'w') as dosya:
@@ -129,17 +139,13 @@ class AppContext(ApplicationContext):
         else:
             debug = False
         self.ctx.ayarYaz('Ayar', 'debug', 'Evet' if debug else 'Hayir')
-        online = self.ctx.ayarOku('Ayar', 'online')
-        if online == 'Hayir':
-            online = False  # sayfaları internetten mi alsın, kayıttan mı?
-        else:
-            online = True
-        self.ctx.ayarYaz('Ayar', 'online', 'Evet' if online else 'Hayir')
+        self.ctx.setOnline (self.ctx.ayarOku('Ayar', 'online'))
+        self.ctx.ayarYaz('Ayar', 'online', self.ctx.getOnline())
         ayarDeger = self.ctx.ayarOku('Ayar', 'TimerDk')
         if ayarDeger is None: ayarDeger = '1' #1 dakikada bir kontrol
         self.ctx.TimerDk = int(ayarDeger)
         ayarDeger = self.ctx.ayarOku('DersProgram', 'GuncellemeDk')
-        if ayarDeger is None: ayarDeger = '120' #ders programı online güncelleme
+        if ayarDeger is None: ayarDeger = '120' #ders programı online güncelleme için geçmesi gereken süre
         self.ctx.GuncellemeDk = int(ayarDeger)
         self.ctx.dpKaynak = self.ctx.ayarOku('DersProgram', 'Kaynak')
         if self.ctx.dpKaynak is None: self.ctx.dpKaynak='Program'
@@ -225,6 +231,18 @@ class AppContext(ApplicationContext):
     def bugunmu(self, gun1):
         return gun1 == self.ctx.bugun()
 
+    def bugunmuD(self,date1):
+        return self.ctx.date2gun(date1) == self.ctx.bugun()
+
+    def tarihfarki(self,tarih1,tarih2):
+        return (self.ctx.gun2date(tarih1) - self.ctx.gun2date(tarih2)).days    #metin formatında 2 tarih arası fark, gün olarak
+
+    def date2gun(self,tarih):
+        return tarih.strftime('%d.%m.%Y')   #date formatından metin formatına
+
+    def gun2date(self,gun):
+        return datetime.strptime(gun,'%d.%m.%Y')   #metin formatından date formatına
+
     def kalanDakika(self, saat1):
         simdi = datetime.now().strftime('%H:%M')
         alt = datetime.strptime(simdi, '%H:%M')
@@ -244,7 +262,7 @@ class AppContext(ApplicationContext):
         alt = datetime.strptime(saat1, '%H:%M')
         if tarih is None: tarih = self.ctx.bugun()
         if ust < alt:
-            gecengun=(datetime.strptime(tarih,'%d.%m.%Y') - datetime.strptime(bugun,'%d.%m.%Y')).days
+            gecengun = self.ctx.tarihfarki(tarih, bugun)
             ust = ust + (86400 * gecengun)
         gecen = int((ust - alt).seconds / 60)
         if debug: self.ctx.logYaz(
@@ -343,7 +361,7 @@ class AppContext(ApplicationContext):
     def loginKontrol(self):
         cerezler = self.cerezOku()
         try:
-            if online:
+            if self.ctx.online:
                 yanit = self.ctx.getSession().get(adres + '/mesajlar', cookies=cerezler)
                 sayfa = yanit.text
                 self.responseYaz(anaKlasor + '\\oys-mesaj.html', sayfa)
@@ -358,7 +376,7 @@ class AppContext(ApplicationContext):
                 if debug: self.ctx.logYaz("loginKontrol: Kullanıcı/Şifre hatalı!!! ")
                 self.main_window.btn_Login.setVisible(True)
                 self.ctx.loggedIn = False
-                return None
+                kullanici_adi = None
             if soup.find('span', {'class': 'username username-hide-on-mobile'}):
                 kullanici_adi = soup.find('span', {'class': 'username username-hide-on-mobile'}).text
                 self.ayarYaz('Login', 'kullanici_adi', kullanici_adi)
@@ -384,7 +402,7 @@ class AppContext(ApplicationContext):
 
     def login(self):
         kullanici = self.ayarLogin()
-        if online:
+        if self.ctx.online:
             sayfa = self.ctx.getSession().get(adres).text
             self.responseYaz(anaKlasor + '\\oys-ana.html', sayfa)
         else:
@@ -404,7 +422,7 @@ class AppContext(ApplicationContext):
             if gizli.attrs['name'] == 'pd':
                 kullanici[kullanici['deger_adi']] = gizli.attrs['value']
         # if debug: self.ctx.logYaz(f'login: kullanici={kullanici}') #şifreyi açık gösteriyor, gerekmezse kaldır
-        if online:
+        if self.ctx.online:
             response = self.ctx.getSession().post(adres + '/login', data=kullanici)
             sayfa = response.text
             self.responseYaz(anaKlasor + '\\oys-login.html', sayfa)
@@ -453,7 +471,7 @@ class AnaPencere(QMainWindow):
         self.anaVLayout.addLayout(self.anaLayout)
         # self.anaform.setLayout(self.anaLayout)
         self.setCentralWidget(self.anaform)
-        self.lblOnOff = QLabel('(Online)' if online else '(Offline)', self.anaform)
+        self.lblOnOff = QLabel('(Online)' if self.ctx.online else '(Offline)', self.anaform)
         self.anaLayout.addWidget(self.lblOnOff)
         self.anaLayout.addWidget(QLabel('Kullanıcı Adı:', self.anaform))
         self.lbl_KullaniciAd = QLabel(kullanici_adi, self.anaform)
@@ -496,7 +514,6 @@ class AnaPencere(QMainWindow):
     def scogezginiac(self):
         self.ctx.anaKlasor = anaKlasor
         os.makedirs(anaKlasor + '\\sco', exist_ok=True)
-        self.ctx.online = online
         self.ctx.debug = debug
         self.ctx.getCommonInfo=dersProgrami.getCommonInfo
         self.ctx.oturumGetir=dersProgrami.oturumGetir
@@ -662,7 +679,7 @@ class dersProgrami(QDialog):
     def ders_programi_getir(self):
         global dersler
         dersler = []
-        if online:
+        if self.ctx.online:
             if self.ctx.loginKontrol() is None:
                 if debug: self.ctx.logYaz("dersProgramiGetir: Giriş Yapılmadı, iptal?")
                 self.ctx.login()
