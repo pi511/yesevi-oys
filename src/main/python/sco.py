@@ -127,7 +127,8 @@ class scoGezgini(QDialog):
         # self.lstDosyalar
 
     def getDosyalar(self, scoId, oturum=None):
-        dosyalar=[]
+        dosyalar = []
+        refler = {}
         if oturum: poturum='&session='+oturum
         else: poturum=''
         scodosya=self.ctx.anaKlasor + f'\\sco\\oys-scoexp{scoId}.xml'
@@ -167,17 +168,23 @@ class scoGezgini(QDialog):
             if ekle: dosyalar.append({'no': i})
             ekle= False
             for item in dosya:
-                if debug and i>0: print("getDosyalar: depth=",dosya.attrib['depth'],"type=",dosya.attrib['type'],"tag=",item.tag,"text=",item.text)
+                if debug and i==0: print("getDosyalar: depth=",dosya.attrib['depth'],"type=",dosya.attrib['type'],"tag=",item.tag,"text=",item.text)
                 if item.tag=='seminar-name':
                     dosyalar[i]['dosyaadi']=item.text.strip()
                     ekle= True
                 if dosya.attrib['depth'] != '1': ekle= False
                 dosyalar[i]['scoid']= dosya.attrib['sco-id']
                 if item.tag=='url-path': dosyalar[i]['url']=item.text.strip()
+            dosyalar[i]['depth'] = dosya.attrib['depth']
+            refler[dosyalar[i]['url'][1:-1]] = dosyalar[i]['dosyaadi']
+            if dosyalar[i]['dosyaadi'][0] + dosyalar[i]['dosyaadi'][-1] == '//':
+                if debug: print("reflerde varmı=", dosyalar[i]['dosyaadi'][1:-1] in refler, "refler=", refler)
+                while dosyalar[i]['dosyaadi'][1:-1] in refler:
+                    dosyalar[i]['dosyaadi']=refler[dosyalar[i]['dosyaadi'][1:-1]]
             if debug: print(f"getDosyalar: {dosyalar[i]}")
             if ekle: i += 1
         self.ctx.logYaz(f"getDosyalar: {scodosya}= {i} adet dosya okundu")
-        return i, dosyalar
+        return i+1, dosyalar
 
     def dersClicked(self, index):
         self.lstDosyalar.clear()
@@ -192,7 +199,7 @@ class scoGezgini(QDialog):
             self.onlineOl()
             c, dosyalar = self.getDosyalar(self.dersler[index.row()],self.oturum)
         for i in range(0,c):
-            self.lstDosyalar.addItem(dosyalar[i]['dosyaadi'])
+            self.lstDosyalar.addItem(f"{dosyalar[i]['dosyaadi']} ({dosyalar[i]['depth']})")
         self.dosyalar=dosyalar
 
     def setHeaders(self):
@@ -206,8 +213,19 @@ class scoGezgini(QDialog):
         if debug: print(f"setHeaders: {header}")
         return header
 
+    def readable_size(self, size):
+        if type(size)==type(None):
+            size = 0
+        units = ('KB', 'MB', 'GB', 'TB')
+        size_list = [f'{int(size):,d} B'] + [f'{int(size) / 1024 ** (i + 1):,.1f} {u}' for i, u in enumerate(units)]
+        return [size for size in size_list if not size.startswith('0.')][-1]
+
     def dosyaGetir(self):
         self.buttonBox.Cancel= True
+        if self.lstDosyalar.selectedIndexes()==[]:
+            self.buttonBox.Cancel = False
+            if debug: print(f"dosyaGetir: Seçili dosya yok!")
+            return
         d=self.lstDosyalar.selectedIndexes()[0].row()
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -217,7 +235,7 @@ class scoGezgini(QDialog):
         yanit= self.ctx.session.get(url, headers=self.setHeaders())
         durum = yanit.status_code
         dosyaboyu = yanit.headers.get('content-length')
-        if debug: print(f"dosyaGetir: ilk deneme={durum} dosyaboyut={dosyaboyu}")
+        if debug: print(f"dosyaGetir: ilk deneme={durum} dosyaboyutu={self.readable_size(dosyaboyu)} ({dosyaboyu} bytes)")
         yanit = self.ctx.session.get(url, stream= True, headers=self.setHeaders())  #ikinci deneme, ilk denemede inmiyor genelde
         durum = yanit.status_code
         if debug: print(f"dosyaGetir: gelenHeader={yanit.headers}")

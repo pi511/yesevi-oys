@@ -13,9 +13,10 @@ ScoGezgini menüsünden:
   - Alt kutudan dersi seçtiğinizde o derse ait indirilebilecek dosyalar sağ kutuya listelenir.
   - Sağ kutuda dosya seçip Save butonuna bastığınızda dosya sistemde indirilebilir halde mevcut ise indirilir.
   - Dosya aynı ad ile ulaşılamıyorsa, derse ait içerik (swf slide oynatıcı ile beraber) zip olarak indirilir.
-  - Not: dosyalar bazen sco ile belirtilen yolda değil, diğer yolda olabiliyor. Sistemin iç işleyişini bilmediğimden tahminimce
+  - Not: dosyalar bazen sco ile belirtilen yolda değil, diğer yolda olabiliyor. Sistemin admin tarafında işleyişini bilmediğimden tahminimce
   - pdf'den ppt'ye, pptx'e vs çevrimler sonunda bir kaç dosya sco'su oluşuyor.
   - Bunlardan birinin url'sinde diğerinin dosya adını indirebiliyorsunuz. Bu mantığı programla kurmak istemedim.
+  - Bunun yerine dosya adlarının yanın sco-depth'lerini yazdım. Derinlik 2 olan daha kuvvetle muhtemel inecektir.
   - İlle de o dosyayı manuel indirmek isterseniz buradaki açıklamaları takip edin:
   - https://tarikozcan.wordpress.com/2017/07/14/turtepte-sanal-derste-gosterilen-sunulari-indirmek/
 

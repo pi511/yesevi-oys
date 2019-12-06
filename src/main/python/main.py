@@ -569,6 +569,9 @@ class dersProgrami(QDialog):
 
     def dersProgramDoldur(self):
         dersler = self.ders_program_kontrol()
+        if len(dersler) != self.ctx.dersSayisi:
+            self.ctx.dersSayisi = len(dersler)
+            self.tableWidget.setRowCount(self.ctx.dersSayisi)
         i = 0
         for ders in dersler:
             self.tableWidget.setItem(i, 0, QTableWidgetItem(ders['ders']))
@@ -615,7 +618,8 @@ class dersProgrami(QDialog):
     def initUI(self):
         self.setWindowTitle(self.title)
         self.tableWidget = QTableWidget()
-        self.tableWidget.setRowCount(6)
+        self.ctx.dersSayisi=6
+        self.tableWidget.setRowCount(self.ctx.dersSayisi)
         self.tableWidget.setColumnCount(5)
         self.tableWidget.setHorizontalHeaderLabels(['Ders Adı', 'Tarih', 'Saat', 'Kalan Süre', 'Bağlantı'])
         self.tableWidget.setColumnWidth(0, 400)
