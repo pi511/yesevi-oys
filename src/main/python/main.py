@@ -4,7 +4,7 @@ import base64
 import sys
 # import os
 import webbrowser
-# from datetime import datetime
+from datetime import datetime, timedelta
 import configparser
 import pickle
 # import requests
@@ -13,23 +13,28 @@ from PyQt5 import uic
 from PyQt5.QtCore import Qt, QTimer, QTime, pyqtSlot
 #from PyQt5.QtWidgets import *
 # from bs4 import BeautifulSoup
+import sqlite3
 from sco import *
+from dersIcerik import *
 
 debug = False
-anaKlasor = 'c:\\pi\\temp'
+anaKlasor = os.environ['USERPROFILE']+'\\oys-yesevi'
 ayarlar = anaKlasor + '\\oys-yesevi.ini'
 cerezF = anaKlasor + '\\oys-yesevi-c.ini'
 logfile = anaKlasor + '\\oys-yesevi.log'
+dbfile = anaKlasor + '\\oys-yesevi.db'
 Config = configparser.ConfigParser()
 adres = 'https://oys.yesevi.edu.tr'
 dersler = []
 ilkders = -1
+ONLINESURE = 10
 
 
 class AppContext(ApplicationContext):
     def __init__(self):
         super(AppContext, self).__init__()
         self.online = True
+        self.onlineOldu = False
         #global değişkenleri buraya alabilirsin
 
     def run(self):
@@ -42,14 +47,14 @@ class AppContext(ApplicationContext):
         self.app.setApplicationName('OYS')
         return AnaPencere(self)
 
-    def setOnline(self,online):
+    def setOnline(self,online): #Hayır-Evet -> False-True
         if online == 'Hayir':
             self.ctx.online = False  # sayfaları internetten mi alsın, kayıttan mı?
         else:
             self.ctx.online = True
         return self.ctx.online
 
-    def getOnline(self, online=None):
+    def getOnline(self, online=None): #False-True -> Hayır-Evet
         return 'Evet' if (self.ctx.online if online is None else online) else 'Hayir'
 
     class Ayarlar(QDialog):
@@ -125,6 +130,8 @@ class AppContext(ApplicationContext):
         self.ctx.Ayarlar(self.ctx)
         if debug: self.ctx.logYaz(f'ayarlariAc: Ayarlar açıldı/kapandı.')
 
+#BAŞLANGIÇ AYARLARI
+
     def ayarlariOku(self):
         global debug
         os.makedirs(anaKlasor, exist_ok=True)
@@ -141,8 +148,9 @@ class AppContext(ApplicationContext):
         self.ctx.ayarYaz('Ayar', 'debug', 'Evet' if debug else 'Hayir')
         self.ctx.setOnline (self.ctx.ayarOku('Ayar', 'online'))
         self.ctx.ayarYaz('Ayar', 'online', self.ctx.getOnline())
+        self.ctx.dbConnected = False
         ayarDeger = self.ctx.ayarOku('Ayar', 'TimerDk')
-        if ayarDeger is None: ayarDeger = '1' #1 dakikada bir kontrol
+        if ayarDeger is None: ayarDeger = '2' #1 dakikada bir kontrol
         self.ctx.TimerDk = int(ayarDeger)
         ayarDeger = self.ctx.ayarOku('DersProgram', 'GuncellemeDk')
         if ayarDeger is None: ayarDeger = '120' #ders programı online güncelleme için geçmesi gereken süre
@@ -161,6 +169,8 @@ class AppContext(ApplicationContext):
         if ayarDeger is None: ayarDeger = '10' #dersten sonra tekrar açma en son sınır
         self.ctx.TekrarEnGec = int(ayarDeger)
         self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj') #gelen mesaj sayısı, en son
+
+#AYAR-LOG-ÇEREZ-RESPONSE DOSYA İŞLEMLERİ
 
     def ayarYaz(self, grup, ayar, deger):
         if 'Ayar' not in Config:
@@ -205,6 +215,7 @@ class AppContext(ApplicationContext):
 
     def cerezYaz(self, cerezler):
         global cerezF
+        self.ctx.cerezler = cerezler
         with open(cerezF, 'wb') as dosya:
             pickle.dump(cerezler, dosya)
             dosya.close()
@@ -224,6 +235,28 @@ class AppContext(ApplicationContext):
             if debug: self.ctx.logYaz(f'responseYaz: {dosyaadi} yazıldı')
             dosya.write(icerik)
             dosya.close()
+
+#VERİTABANI İŞLEMLERİ
+
+    def dbConnect(self):
+        if not self.ctx.dbConnected:
+            self.ctx.db = sqlite3.connect(dbfile)
+            self.ctx.dbConnected = True
+        return self.ctx.db
+
+    def dbCursor(self):
+        return self.dbConnect().cursor()
+
+    def dbTableExists(self, table):
+        cursor = self.dbCursor()
+        cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
+        row = cursor.fetchone()
+        if row is None:
+            return False
+        else:
+            return True
+
+#TARİH-SAAT İŞLEMLERİ
 
     def bugun(self):
         return datetime.now().strftime("%d.%m.%Y")
@@ -261,9 +294,8 @@ class AppContext(ApplicationContext):
         ust = datetime.strptime(simdi, '%H:%M')
         alt = datetime.strptime(saat1, '%H:%M')
         if tarih is None: tarih = self.ctx.bugun()
-        if ust < alt:
-            gecengun = self.ctx.tarihfarki(tarih, bugun)
-            ust = ust + (86400 * gecengun)
+        gecengun = self.ctx.tarihfarki(tarih, bugun)
+        ust = ust + timedelta(minutes = 1440 * gecengun)
         gecen = int((ust - alt).seconds / 60)
         if debug: self.ctx.logYaz(
             f"===gecenDakika: {gecen} dk. saat1={saat1} şimdi={simdi} <-{sys._getframe().f_back.f_code.co_name}")
@@ -330,6 +362,8 @@ class AppContext(ApplicationContext):
             self.timer.stop()
             self.close()
 
+#OTURUM-SESSİON LOGON İŞLEMLERİ
+
     def initKullanici(self):
         kullanici = {
             'giris_yap_btn': 'Sisteme Giriş Yap',
@@ -344,7 +378,7 @@ class AppContext(ApplicationContext):
         kullanici = self.initKullanici()
         if self.ayarOku('Kullanici', 'kullanici_adi') is None or self.ayarOku('Kullanici', 'sifre') is None:
             if debug: self.ctx.logYaz('ayarLogin:' + 'Kullanıcı Adı/Şifre boş!')
-            self.ctx.KulAdSifAl(self.ctx)
+            # self.ctx.KulAdSifAl(self.ctx)
         else:
             kullanici['kullanici_adi'] = self.ayarOku('Kullanici', 'kullanici_adi')
             kullanici['sifre'] = base64.b64decode(bytearray(self.ayarOku('Kullanici', 'sifre'), 'utf-8')).decode(
@@ -355,7 +389,7 @@ class AppContext(ApplicationContext):
 
     def getSession(self):
         if self.ctx.session is None: self.ctx.session=requests.session()
-        if debug: print(f"getSession: {self.ctx.session}")
+        if debug: print(f"getSession: {self.ctx.session} <- {sys._getframe().f_back.f_code.co_name}")
         return self.ctx.session
 
     def loginKontrol(self):
@@ -454,6 +488,70 @@ class AppContext(ApplicationContext):
             self.main_window.btn_Login.setVisible(True)
         return kullanici_adi
 
+    def onlineOl(self):
+        if self.ctx.onlineOldu:
+            if int((self.onlinesaat - datetime.now()).seconds) < (ONLINESURE * 60):
+                user_id, login, name, self.ctx.cerezler = self.getCommonInfo(self.oturum, self.ctx.session)
+                return self.oturum
+        self.ctx.online = True
+        if self.ctx.loginKontrol() is None:
+            if not self.ctx.login():
+                return None
+        self.ctx.cerezler = self.ctx.cerezOku()
+        self.oturum = self.oturumGetir(self.ctx.cerezler, mesajGetir=False)
+        user_id, login, name, self.ctx.cerezler = self.getCommonInfo(self.oturum, self.ctx.session)
+        self.ctx.cerezler['BREEZESESSION'] = self.oturum
+        if debug: print(f"onlineOl: user_id={user_id} name={name} login={login} oturum={self.oturum} cerezler={self.ctx.cerezler}")
+        self.onlinesaat= datetime.now()
+        self.ctx.onlineOldu= True
+        return self.oturum
+
+    def getCommonInfo(self, oturum, session=None):
+        cerezler = self.ctx.cerezOku()
+        cerezler['BREEZESESSION'] = oturum
+        if session is None:
+            sonuc = requests.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+        else:
+            sonuc = session.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+        yenicerez= sonuc.cookies
+        yenicerez['BREEZESESSION'] = oturum
+        if 'BreezeCCookie' in yenicerez:
+            cerezler['BreezeCCookie'] = yenicerez['BreezeCCookie']
+        self.ctx.cerezYaz(cerezler)
+        soup = BeautifulSoup(sonuc.text, 'lxml')
+        name = soup.find('name')
+        if name: name = name.text
+        login = soup.find('login')
+        if login: login = login.text
+        user = soup.find('user')
+        if user is not None:
+            user_id = user['user-id']
+        else:
+            user_id = None
+        return user_id, login, name, yenicerez
+
+    def oturumGetir(self, cerezler, mesajGetir=True):
+        if mesajGetir:
+            veri = {'page': 'get-badge-data', 'sg': ''}
+            yanit = self.ctx.getSession().post(adres + '/getMessagePage', data=veri, cookies=cerezler)
+            sonuc = yanit.json()
+            mesaj = eval(sonuc['Deger'])
+            if debug: self.ctx.logYaz(f"oturumGetir: Gelen Mesaj Sayısı={mesaj['GELEN']}, Giden Mesaj={mesaj['GIDEN']}")
+            if mesaj['GELEN'] > 0:
+                self.ctx.main_window.lblMesaj.setText(f"Mesaj: {mesaj['GELEN']}")
+                self.ctx.TimedMessageBox("oturumGetir", f"Mesajınız Var ({mesaj['GELEN']})")
+            else:
+                self.ctx.main_window.lblMesaj.setText(f"Mesaj: {0}")
+            self.ctx.ayarYaz('Login', 'Mesaj', str(mesaj['GELEN']))
+        veri = {'page': 'GTACSI', 'sg': ''}
+        yanit = self.ctx.getSession().post(adres + '/getMessagePage', data=veri, cookies=cerezler)
+        sonuc = yanit.json()
+        oturum = sonuc['Deger']
+        if debug: print(f'oturumGetir: session={oturum}')
+        self.ctx.ayarYaz('Login', 'oturum', oturum)
+        self.ctx.oturum = oturum
+        return oturum
+
 
 class AnaPencere(QMainWindow):
     def __init__(self, ctx):
@@ -496,7 +594,10 @@ class AnaPencere(QMainWindow):
         kullanici_adi = self.ctx.login()
         self.lbl_KullaniciAd.setText(kullanici_adi)
         # self.anaLayout.removeWidget(self.btn_Login)
-        self.btn_Login.setVisible(False)
+        if kullanici_adi is not None:
+            self.btn_Login.setVisible(False)
+        else:
+            self.btn_Login.setVisible(True)
         if debug: self.ctx.logYaz(f'btnLoginClicked: kullanici_adi={kullanici_adi}')
 
     @pyqtSlot()
@@ -513,11 +614,17 @@ class AnaPencere(QMainWindow):
     @pyqtSlot()
     def scogezginiac(self):
         self.ctx.anaKlasor = anaKlasor
-        os.makedirs(anaKlasor + '\\sco', exist_ok=True)
         self.ctx.debug = debug
-        self.ctx.getCommonInfo=dersProgrami.getCommonInfo
-        self.ctx.oturumGetir=dersProgrami.oturumGetir
+        # self.ctx.getCommonInfo=dersProgrami.getCommonInfo
+        # self.ctx.oturumGetir=dersProgrami.oturumGetir
         b = scoGezgini(self.ctx)
+
+    @pyqtSlot()
+    def dersIcerikAc(self):
+        self.ctx.anaKlasor = anaKlasor
+        self.ctx.debug = debug
+        self.ctx.adres = adres
+        b = dersIcerik(self.ctx)
 
     def setupMenu(self):
         menu = self.menuBar().addMenu("&Dosya")
@@ -526,13 +633,17 @@ class AnaPencere(QMainWindow):
         ayarlari_ac.triggered.connect(self.ctx.ayarlariAc)
         menu.addAction(ayarlari_ac)
         #ders programı menüsü
-        ders_programi_ac = QAction('&Ders Programı', self)
-        ders_programi_ac.triggered.connect(self.dersProgramiAc)
-        menu.addAction(ders_programi_ac)
+        dersProgramiM = QAction('&Ders Programı ve İzleme', self)
+        dersProgramiM.triggered.connect(self.dersProgramiAc)
+        menu.addAction(dersProgramiM)
         #sco gezgini menüsü
-        scoGezginiAc=QAction('&SCO Gezgini', self)
-        scoGezginiAc.triggered.connect(self.scogezginiac)
-        menu.addAction(scoGezginiAc)
+        scoGezginiM=QAction('&SCO Gezgini', self)
+        scoGezginiM.triggered.connect(self.scogezginiac)
+        menu.addAction(scoGezginiM)
+        #içerik okuma
+        dersIcerikM=QAction('Ders İçeri&kleri', self)
+        dersIcerikM.triggered.connect(self.dersIcerikAc)
+        menu.addAction(dersIcerikM)
         # çıkış menüsü
         close_action = QAction('&Çıkış', self)
         close_action.triggered.connect(self.close)
@@ -566,6 +677,26 @@ class dersProgrami(QDialog):
             self.exec()
         else:
             self.reject()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.tableWidget = QTableWidget()
+        self.ctx.dersSayisi=6
+        self.tableWidget.setRowCount(self.ctx.dersSayisi)
+        self.tableWidget.setColumnCount(5)
+        self.tableWidget.setHorizontalHeaderLabels(['Ders Adı', 'Tarih', 'Saat', 'Kalan Süre', 'Bağlantı'])
+        self.tableWidget.setColumnWidth(0, 400)
+        self.tableWidget.setColumnWidth(1, 100)
+        self.tableWidget.setColumnWidth(2, 50)
+        self.tableWidget.setColumnWidth(3, 100)
+        self.tableWidget.setColumnWidth(4, 250)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.tableWidget)
+        self.btn_Baslat = QPushButton('Otomatik İzlemeyi Başlat', self)
+        self.btn_Baslat.clicked.connect(self.btn_Baslat_clicked)
+        self.layout.addWidget(self.btn_Baslat)
+        self.setLayout(self.layout)
+        self.setGeometry(50, 50, 1000, 300)
 
     def dersProgramDoldur(self):
         dersler = self.ders_program_kontrol()
@@ -615,83 +746,18 @@ class dersProgrami(QDialog):
                 if debug: self.ctx.logYaz(f"Başlat_clicked: Bu hafta ders yok!, ilkders={ilkders}")
         self.ctx.ayarYaz('DersProgram', 'Otomatik', 'Evet' if self.otomatik else 'Hayır')
 
-    def initUI(self):
-        self.setWindowTitle(self.title)
-        self.tableWidget = QTableWidget()
-        self.ctx.dersSayisi=6
-        self.tableWidget.setRowCount(self.ctx.dersSayisi)
-        self.tableWidget.setColumnCount(5)
-        self.tableWidget.setHorizontalHeaderLabels(['Ders Adı', 'Tarih', 'Saat', 'Kalan Süre', 'Bağlantı'])
-        self.tableWidget.setColumnWidth(0, 400)
-        self.tableWidget.setColumnWidth(1, 100)
-        self.tableWidget.setColumnWidth(2, 50)
-        self.tableWidget.setColumnWidth(3, 100)
-        self.tableWidget.setColumnWidth(4, 250)
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(self.tableWidget)
-        self.btn_Baslat = QPushButton('Otomatik İzlemeyi Başlat', self)
-        self.btn_Baslat.clicked.connect(self.btn_Baslat_clicked)
-        self.layout.addWidget(self.btn_Baslat)
-        self.setLayout(self.layout)
-        self.setGeometry(50, 50, 1000, 300)
-
-    def getCommonInfo(self, oturum, session=None):
-        cerezler = self.ctx.cerezOku()
-        cerezler['BREEZESESSION'] = oturum
-        if session is None:
-            sonuc = requests.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
-        else:
-            sonuc = session.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
-        yenicerez= sonuc.cookies
-        yenicerez['BREEZESESSION'] = oturum
-        if 'BreezeCCookie' in yenicerez:
-            cerezler['BreezeCCookie'] = yenicerez['BreezeCCookie']
-        self.ctx.cerezYaz(cerezler)
-        soup = BeautifulSoup(sonuc.text, 'lxml')
-        name = soup.find('name')
-        if name: name = name.text
-        login = soup.find('login')
-        if login: login = login.text
-        user = soup.find('user')
-        if user is not None:
-            user_id = user['user-id']
-        else:
-            user_id = None
-        return user_id, login, name, yenicerez
-
-    def oturumGetir(self, cerezler, mesajGetir=True):
-        if mesajGetir:
-            veri = {'page': 'get-badge-data', 'sg': ''}
-            yanit = self.ctx.getSession().post(adres + '/getMessagePage', data=veri, cookies=cerezler)
-            sonuc = yanit.json()
-            mesaj = eval(sonuc['Deger'])
-            if debug: print(f"oturumGetir: Gelen Mesaj Sayısı={mesaj['GELEN']}, Giden Mesaj={mesaj['GIDEN']}")
-            if mesaj['GELEN'] > 0:
-                self.ctx.main_window.lblMesaj.setText(f"Mesaj: {mesaj['GELEN']}")
-                self.ctx.TimedMessageBox("oturumGetir", f"Mesajınız Var ({mesaj['GELEN']})")
-            else:
-                self.ctx.main_window.lblMesaj.setText(f"Mesaj: {0}")
-            self.ctx.ayarYaz('Login', 'Mesaj', str(mesaj['GELEN']))
-        veri = {'page': 'GTACSI', 'sg': ''}
-        yanit = self.ctx.getSession().post(adres + '/getMessagePage', data=veri, cookies=cerezler)
-        sonuc = yanit.json()
-        oturum = sonuc['Deger']
-        if debug: self.ctx.logYaz(f'oturumGetir: session={oturum}')
-        self.ctx.ayarYaz('Login', 'oturum', oturum)
-        return oturum
-
     def ders_programi_getir(self):
         global dersler
         dersler = []
         if self.ctx.online:
-            if self.ctx.loginKontrol() is None:
+            if self.ctx.onlineOl() is None:
                 if debug: self.ctx.logYaz("dersProgramiGetir: Giriş Yapılmadı, iptal?")
-                self.ctx.login()
+                return None
             cerezler = self.ctx.cerezOku()
             response = self.ctx.getSession().post(adres + '/ders_islemleri_ekran', cookies=cerezler)
             yanit = response.text
             self.ctx.responseYaz(anaKlasor + '\\oys-ders.html', yanit)
-            oturum = self.oturumGetir(cerezler)
+            oturum = self.ctx.oturumGetir(cerezler)
         else:
             with open(anaKlasor + '\\oys-ders.html', 'r', encoding="utf-8") as dosya:
                 yanit = dosya.read()
@@ -809,7 +875,7 @@ class dersProgrami(QDialog):
             dersurl = dersler[i]['link'] + '?session=' + oturum + '&proto=true'
             #webbrowser.open('http://sanal.yesevi.edu.tr/login?session=' + oturum)
             webbrowser.open(dersurl)
-            user_id, login, name, yenicerez = self.getCommonInfo(oturum)
+            user_id, login, name, yenicerez = self.ctx.getCommonInfo(oturum)
             #flvView(self.ctx,dersler[i]['link'] + '?session=' + oturum + '&proto=true')
             if debug: self.ctx.logYaz(dersurl)
             self.ctx.ayarYaz('DersProgram', 'SonAcilan', simdiki)

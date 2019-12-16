@@ -14,7 +14,6 @@ import urllib.parse
 
 adres = 'http://sanal.yesevi.edu.tr'
 debug = False
-ONLINESURE = 10
 DERSSURESI = -90
 
 class scoGezgini(QDialog):
@@ -24,35 +23,18 @@ class scoGezgini(QDialog):
         self.ctx = ctx
         uic.loadUi(self.ctx.get_resource('scoExplore.ui'), self)
         debug = self.ctx.debug
+        os.makedirs(self.ctx.anaKlasor + '\\sco', exist_ok=True)
         self.dersler=[]
-        self.onlineOldu= False
         self.mCount, self.MyMeetings=self.getMyMeetings()
         if self.mCount is None:
             if debug: print(f"scoGezgini: Düzgün xml bulunamadı, online olunacak!")
-            self.onlineOl()
-            self.mCount, self.MyMeetings = self.getMyMeetings(self.oturum)
+            self.ctx.onlineOl()
+            self.mCount, self.MyMeetings = self.getMyMeetings(self.ctx.oturum)
         self.takvimDoldur()
         self.calTakvim.clicked.connect(self.calClicked)
         self.lstDersler.clicked.connect(self.dersClicked)
         self.buttonBox.accepted.connect(self.dosyaGetir)
         self.exec()
-
-    def onlineOl(self):
-        if self.onlineOldu:
-            if int((self.onlinesaat - datetime.now()).seconds) < (ONLINESURE * 60):
-                user_id, login, name, self.cerezler = self.ctx.getCommonInfo(self, self.oturum, self.ctx.session)
-                return self.oturum
-        self.ctx.online = True
-        if self.ctx.loginKontrol() is None:
-            self.ctx.login()
-        self.cerezler = self.ctx.cerezOku()
-        self.oturum = self.ctx.oturumGetir(self, cerezler=self.cerezler, mesajGetir=False)
-        user_id, login, name, self.cerezler = self.ctx.getCommonInfo(self, self.oturum, self.ctx.session)
-        self.cerezler['BREEZESESSION'] = self.oturum
-        if debug: print(f"onlineOl: user_id={user_id} name={name} login={login} oturum={self.oturum} cerezler={self.cerezler}")
-        self.onlinesaat= datetime.now()
-        self.onlineOldu= True
-        return self.oturum
 
     def getMyMeetings(self, oturum=None):
         myMeetings=[]
@@ -60,7 +42,7 @@ class scoGezgini(QDialog):
         else: poturum=''
         mydosya=self.ctx.anaKlasor + '\\oys-meetings.xml'
         if not os.path.isfile(mydosya) or poturum!='':
-            if not self.onlineOldu: self.onlineOl()
+            if not self.ctx.onlineOldu: self.ctx.onlineOl()
             url=adres + '/api/xml?action=report-my-meetings'+poturum
             yanit = self.ctx.session.get(url)
             if debug: print(f"getMyMeetings: adres={url}")
@@ -133,12 +115,12 @@ class scoGezgini(QDialog):
         else: poturum=''
         scodosya=self.ctx.anaKlasor + f'\\sco\\oys-scoexp{scoId}.xml'
         if not os.path.isfile(scodosya) or poturum!='':
-            if not self.onlineOldu: self.onlineOl()
+            if not self.ctx.onlineOldu: self.ctx.onlineOl()
             url= adres + '/api/xml?action=sco-expanded-contents&sco-id=' + scoId + poturum
             if oturum is None:
                 yanit = self.ctx.session.get(url)
             else:
-                yanit = self.ctx.session.get(url, cookies=self.cerezler)
+                yanit = self.ctx.session.get(url, cookies=self.ctx.cerezler)
             if debug: print(f"getDosyalar: adres={url}")
             sayfa = yanit.text
             self.ctx.responseYaz(scodosya, sayfa)
@@ -150,8 +132,8 @@ class scoGezgini(QDialog):
             xmlkok= etree.fromstring(bytes(sayfa,encoding='utf-8'))
         except:
             if debug: print(f"getDosyalar: Dosya bozuk, tekrar indirilecek")
-            self.onlineOl()
-            i, dosyalar = self.getDosyalar(scoId,self.oturum)
+            self.ctx.onlineOl()
+            i, dosyalar = self.getDosyalar(scoId,self.ctx.oturum)
             return i, dosyalar
         i=0
         ekle= True
@@ -159,8 +141,8 @@ class scoGezgini(QDialog):
             if eleman.tag=='status':
                 if eleman.attrib['code']!='ok':
                     if debug: print(f"getDosyalar: Hata={eleman.attrib['code']} subcode={eleman.attrib['subcode']}")
-                    self.onlineOl()
-                    i, dosyalar = self.getDosyalar(scoId, self.oturum)
+                    self.ctx.onlineOl()
+                    i, dosyalar = self.getDosyalar(scoId, self.ctx.oturum)
                     return i, dosyalar
             if eleman.tag=='expanded-scos':
                 xmlkok = eleman
@@ -196,8 +178,8 @@ class scoGezgini(QDialog):
             return
         c, dosyalar=self.getDosyalar(self.dersler[index.row()])
         if c is None:
-            self.onlineOl()
-            c, dosyalar = self.getDosyalar(self.dersler[index.row()],self.oturum)
+            self.ctx.onlineOl()
+            c, dosyalar = self.getDosyalar(self.dersler[index.row()],self.ctx.oturum)
         for i in range(0,c):
             self.lstDosyalar.addItem(f"{dosyalar[i]['dosyaadi']} ({dosyalar[i]['depth']})")
         self.dosyalar=dosyalar
@@ -209,7 +191,7 @@ class scoGezgini(QDialog):
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                 'Accept-Language': 'tr,en-US;q=0.7,en;q=0.3',
                 'Accept-Encoding': 'gzip, deflate, br'}
-        header['Cookie']=f"BreezeCCookie={self.cerezler['BreezeCCookie']}; BreezeLoginCookie=; BREEZESESSION={self.cerezler['BREEZESESSION']}"
+        header['Cookie']=f"BreezeCCookie={self.ctx.cerezler['BreezeCCookie']}; BreezeLoginCookie=; BREEZESESSION={self.ctx.cerezler['BREEZESESSION']}"
         if debug: print(f"setHeaders: {header}")
         return header
 
@@ -229,9 +211,9 @@ class scoGezgini(QDialog):
         d=self.lstDosyalar.selectedIndexes()[0].row()
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        self.onlineOl()
+        self.ctx.onlineOl()
         dosyaadi = self.dosyalar[d]['dosyaadi']
-        url = f"{adres}{self.dosyalar[d]['url']}source/{urllib.request.pathname2url(dosyaadi)}" + '?session=' + self.oturum
+        url = f"{adres}{self.dosyalar[d]['url']}source/{urllib.request.pathname2url(dosyaadi)}" + '?session=' + self.ctx.oturum
         yanit= self.ctx.session.get(url, headers=self.setHeaders())
         durum = yanit.status_code
         dosyaboyu = yanit.headers.get('content-length')
@@ -249,8 +231,8 @@ class scoGezgini(QDialog):
         if debug: print(f"dosyaGetir: durum={durum} dosyaadi={dosyaadi} url={url} sonuc={sonuc}")
         if durum != 200 or sonuc=='Bulunamadı':
             dosyaadi = f"{self.dosyalar[d]['scoid']}.zip"
-            url = f"{adres}{self.dosyalar[d]['url']}output/{dosyaadi}?download=zip" + '&session=' + self.oturum
-            yanit = self.ctx.session.get(url, cookies=self.cerezler, stream= True)
+            url = f"{adres}{self.dosyalar[d]['url']}output/{dosyaadi}?download=zip" + '&session=' + self.ctx.oturum
+            yanit = self.ctx.session.get(url, cookies=self.ctx.cerezler, stream= True)
             durum = yanit.status_code
             soup=BeautifulSoup(yanit.text[:100],'html.parser')
             sonuc=soup.find('title')
