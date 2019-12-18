@@ -2,7 +2,8 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout
 from bs4 import BeautifulSoup
 import os, sys
 from datetime import datetime
-
+import re
+import json
 
 class dersIcerik(QDialog):
     def __init__(self, ctx):
@@ -218,15 +219,82 @@ class dersIcerik(QDialog):
         return durum, baglanti
 
     def dersIcerikOku(self, secilen):
-        veri = {'GMOD': 'Start'}
+        if debug: print(f"dersIcerikOku: secilen ders[{secilen}]={self.dersler[secilen]}")
+        mydosya=self.ctx.anaKlasor + f"\\oys-icerik-{self.dersler[secilen]['Ders'][:8]}.html"
         self.ctx.onlineOl()
-        cerezler=self.ctx.cerezOku()
+        cerezler = self.ctx.cerezOku()
+        if not os.path.isfile(mydosya):
+            sonuc = self.ctx.getSession().get(self.dersler[secilen]['Link'], cookies=cerezler)
+            yanit = sonuc.text
+            self.ctx.responseYaz(mydosya, yanit)
+        else:
+            with open(mydosya, 'r', encoding="utf-8") as dosya:
+                yanit = dosya.read()
+                dosya.close()
+        soup = BeautifulSoup(yanit, features='html.parser')
+        scripts = soup.find_all('script')
+        for script in scripts:
+            # if debug: print(f"dersIcerikOku: script={script}")
+            script=script.text
+            if 'var arrayData' in script:
+                script =  re.findall('=(.*?;)', script)
+                jArray = script[0][:-1]
+                print ("jArray=",jArray)
+                arrayData = json.loads(jArray)
+                jArray = script[1][1:-2]
+                print("jArray=", jArray)
+                ogrStatus = json.loads(jArray)
+        if debug: print(f"dersIcerikOku: len={len(arrayData)} arrayData=", arrayData)
+        if debug: print(f"dersIcerikOku: len={len(ogrStatus)} ogrStatus=", ogrStatus)
+        veri = {'GMOD': 'Start'}
         yanit = self.ctx.getSession().post(self.dersler[secilen]['Link'], data=veri, cookies=cerezler)
-        print(yanit.text)
+        # if debug: print(yanit.text)
         sonuc = yanit.json()
         basarili = sonuc['Basarili']
         if basarili:
             print("ok")
+            ks, ss, dizin = self.dizinOlustur(arrayData)
+            ss += ks
+            if debug: print(f"dersIcerikOku: klasör={ks} sayfa={ss}")
+            i = 0
+            for o in ogrStatus:
+                if o['PDIH_ICERIK_SURE'] < 10:
+                    print(f"{self.ctx.adres}/index.php?Reque=dersIcerikView&dersManifest={dizin[i]['ss']}&manifestKey={dizin[i]['kk']}&DP={dizin[i]['dp']}&ss={ss}")
+                i += 1
+
+            # print("dizin=",dizin)
+
+    def dizinOlustur(self, arrayData):
+        dizin = []
+        ss = 0
+        ks = 0
+        i = -1
+        for a in arrayData:
+            i += 1
+            elem = a[0]
+            if debug: print(f"dizinOlustur: i={i} elem={elem['text']} a.value={elem['value']}")
+            if elem['value'] is None:
+                dizin.append({'tip': 'sayfa'})
+                dizin[i]['dp'] = elem['text']
+                dizin[i]['ss'] = elem['link']
+                dizin[i]['kk'] = elem['key']
+                dizin[i]['dp'] = elem['ders']
+                ss += 1
+            else:
+                dizin.append({'tip': 'klasor'})
+                dizin[i]['dp'] = elem['text']
+                dizin[i]['ss'] = elem['link']
+                dizin[i]['kk'] = elem['key']
+                dizin[i]['dp'] = elem['ders']
+                ks += 1
+                k, s, alt = self.dizinOlustur(elem['value'])
+                ks += k
+                ss += s
+                dizin += alt
+                i += len(alt)
+        if debug: print(f"dizinOlustur: klasör={ks} sayfa={ss} i={i}")
+        return ks, ss, dizin
+
 
 if __name__ == '__main__':
     print('main.py çalıştır')
