@@ -19,6 +19,21 @@ ScoGezgini menüsünden:
   - Bunun yerine dosya adlarının yanın sco-depth'lerini yazdım. Derinlik 2 olan daha kuvvetle muhtemel inecektir.
   - İlle de o dosyayı manuel indirmek isterseniz buradaki açıklamaları takip edin:
   - https://tarikozcan.wordpress.com/2017/07/14/turtepte-sanal-derste-gosterilen-sunulari-indirmek/
+===============================================================================<br>
+Ders İçerikleri menüsünden:
+  - Ders içerikleri okuma durumunuzu görebilirsiniz.
+  - Bilgiler ilk okumada veritabanına kayıt edilir. 
+  - Güncel durum için 'İçerik Durumlarını Güncelle' butonunu kullanabilirsiniz.
+  - Tablodan bir ders seçip sağ alttaki ...Başlat butonuna basın.
+  - Yeni bir pencere açılacak ve 5 saniye içinde otomatik okuma başlayacaktır.
+  - İsterseniz Başlat'a basıp hemen başlatabilirsiniz.
+  - Sistemde okuma süreleri değişik bir algorita ile dönmektedir. İlk sayfalarda 3 saniye, 4 saniye vs gibi
+  süreler varken, sonrakilerde son tarihten sonra geçen süre hesaplanmıştır. Bu algoritmayı çözmekle uğraşmak 
+  yerine;
+  - Her ders için minimum okuma süresi olan ders tespit edilir. Bu süreden en fazla 10 saniye daha fazla okunmuş
+  olanlar yeniden okuma listesine alınır. Bu 10 saniyeyi ayarlardan artırabilirsiniz.
+  - Her sayfa 10 saniye süre ile açılır. Bitine işlem durur ve tablo güncellenir. 
+  
 
 **Ayarlar** açıklaması:<br>
 - Kaç dakika önce     : ders sayfası, ders saatinden kaç dakika önce açılsın. def=3
@@ -30,6 +45,8 @@ ScoGezgini menüsünden:
 - Kaynak              : Liste (ders listesinden oku) Program (ders programından oku)
 - Dersi bir kez aç    : otomatik açılan sayfada problem olması halinde dakikada bir sayfayı tekrar aç def=açma
 - En geç kaç dk.      : dersi birden fazla açacaksa, ders saatinden en geç kaç dk. sonra tekrar açsın (timer kontrol dakika'da belirtilen dk.da bir açılacak) def=10
+
+- Icerik okuma süresi : Otomatik ders içeriği okuma işleminde, her sayfa kaç saniye okunacak...
 
 ===============================================================================<br>
 Python içinden kullanabilmek için ilgili modülleri kurmalısınız. (pip install ...)

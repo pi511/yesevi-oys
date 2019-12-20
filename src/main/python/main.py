@@ -83,8 +83,11 @@ class AppContext(ApplicationContext):
             self.btnLogReset.clicked.connect(self.logReset)
             self.timMinSaat.setTime(QTime.fromString(self.ctx.minSaat))
             self.timMaxSaat.setTime(QTime.fromString(self.ctx.maxSaat))
+            #ikinci tab
+            self.spnSureArtim.setValue(self.ctx.SureArtim)
             self.buttonBox.accepted.connect(self.applyAll)
             self.buttonBox.rejected.connect(self.cancel)
+            self.tabWidget.setCurrentIndex(0)
             self.exec_()
             debug = self.debug
             self.ctx.online = self.online
@@ -125,6 +128,8 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('DersProgram', 'TekrarAcma', 'Evet' if self.ctx.tekraracma else 'Hayir')
             self.ctx.TekrarEnGec=self.spnTekrarEnGec.value()
             self.ctx.ayarYaz('DersProgram', 'TekrarEnGec',str(self.ctx.TekrarEnGec))
+            self.ctx.SureArtim=self.spnSureArtim.value()
+            self.ctx.ayarYaz('IcerikOkuma', 'SureArtim',str(self.ctx.SureArtim))
 
     def ayarlariAc(self):
         self.ctx.Ayarlar(self.ctx)
@@ -168,6 +173,9 @@ class AppContext(ApplicationContext):
         ayarDeger = self.ctx.ayarOku('DersProgram', 'TekrarEnGec')
         if ayarDeger is None: ayarDeger = '10' #dersten sonra tekrar açma en son sınır
         self.ctx.TekrarEnGec = int(ayarDeger)
+        ayarDeger = self.ctx.ayarOku('IcerikOkuma', 'SureArtim')
+        if ayarDeger is None: ayarDeger = 10 #icerik okuma süre artırım
+        self.ctx.SureArtim = int(ayarDeger)
         self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj') #gelen mesaj sayısı, en son
 
 #AYAR-LOG-ÇEREZ-RESPONSE DOSYA İŞLEMLERİ
@@ -226,6 +234,7 @@ class AppContext(ApplicationContext):
             with open(cerezF, 'rb') as dosya:
                 cerezler = pickle.load(dosya)
                 dosya.close()
+                self.ctx.cerezler = cerezler
         except:
             cerezler = None
         return cerezler
@@ -561,7 +570,7 @@ class AnaPencere(QMainWindow):
         version = self.ctx.build_settings['version']
         self.title = 'OYS-Yesevi otomatik ders izleme v' + version
         self.setWindowTitle(self.title)
-        self.resize(250, 150)
+        self.resize(280, 150)
         kullanici_adi = self.ctx.ayarOku('Login', 'kullanici_adi')
         self.anaform = QWidget(self)
         self.anaVLayout = QVBoxLayout(self.anaform)

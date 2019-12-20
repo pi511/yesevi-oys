@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>278</height>
+    <width>426</width>
+    <height>294</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,8 +17,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>240</y>
+     <x>68</x>
+     <y>256</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -30,110 +30,401 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_2">
+  <widget class="QPushButton" name="btnLogReset">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>40</y>
-     <width>130</width>
-     <height>13</height>
+     <x>16</x>
+     <y>256</y>
+     <width>75</width>
+     <height>23</height>
     </rect>
    </property>
    <property name="text">
-    <string>                                                                         Debug (log tut)    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    <string>Log sıfırla</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cbxDebug">
+  <widget class="QTabWidget" name="tabWidget">
    <property name="geometry">
     <rect>
-     <x>140</x>
-     <y>40</y>
-     <width>82</width>
-     <height>13</height>
+     <x>8</x>
+     <y>8</y>
+     <width>409</width>
+     <height>192</height>
     </rect>
    </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>10</y>
-     <width>130</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>                                                                              Kaç dakika önce    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="spnDakika">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>10</y>
-     <width>40</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="minimum">
+   <property name="currentIndex">
     <number>1</number>
    </property>
-   <property name="maximum">
-    <number>10</number>
-   </property>
-   <property name="value">
-    <number>3</number>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="cbxOnline">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>70</y>
-     <width>82</width>
-     <height>13</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>70</y>
-     <width>130</width>
-     <height>13</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Online (siteden al)    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
+   <widget class="QWidget" name="tabDersProg">
+    <attribute name="title">
+     <string>Ders Program</string>
+    </attribute>
+    <widget class="QTimeEdit" name="timMaxSaat">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>134</y>
+       <width>60</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="displayFormat">
+      <string>HH:mm</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>4</x>
+       <y>74</y>
+       <width>130</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Online (siteden al)    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_2">
+     <property name="geometry">
+      <rect>
+       <x>4</x>
+       <y>44</y>
+       <width>130</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>                                                                         Debug (log tut)    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="cbxOnline">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>74</y>
+       <width>82</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radKaynak">
+     <property name="geometry">
+      <rect>
+       <x>252</x>
+       <y>74</y>
+       <width>137</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Kaynak: Program</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>4</x>
+       <y>14</y>
+       <width>130</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>                                                                              Kaç dakika önce    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="spnDakika">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>14</y>
+       <width>40</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10</number>
+     </property>
+     <property name="value">
+      <number>3</number>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="spnTimerDk">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>354</x>
+       <y>14</y>
+       <width>30</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>3</number>
+     </property>
+     <property name="value">
+      <number>1</number>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="spnGuncellemeDk">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>354</x>
+       <y>44</y>
+       <width>40</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <number>60</number>
+     </property>
+     <property name="maximum">
+      <number>480</number>
+     </property>
+     <property name="singleStep">
+      <number>30</number>
+     </property>
+     <property name="value">
+      <number>60</number>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="cbxDebug">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>44</y>
+       <width>82</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_4">
+     <property name="geometry">
+      <rect>
+       <x>4</x>
+       <y>104</y>
+       <width>130</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>En erken ders saati    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_5">
+     <property name="geometry">
+      <rect>
+       <x>4</x>
+       <y>134</y>
+       <width>130</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>En geç ders saati    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="spnTekrarEnGec">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>354</x>
+       <y>132</y>
+       <width>40</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10</number>
+     </property>
+     <property name="value">
+      <number>5</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_9">
+     <property name="geometry">
+      <rect>
+       <x>199</x>
+       <y>44</y>
+       <width>145</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Ders program güncelleme    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_6">
+     <property name="geometry">
+      <rect>
+       <x>224</x>
+       <y>104</y>
+       <width>120</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Dersi bir kez aç    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_7">
+     <property name="geometry">
+      <rect>
+       <x>224</x>
+       <y>14</y>
+       <width>120</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Timer kontrol dakika    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>224</x>
+       <y>134</y>
+       <width>120</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>En geç kaç dk.    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="cbxTekrarAcma">
+     <property name="geometry">
+      <rect>
+       <x>354</x>
+       <y>104</y>
+       <width>82</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QTimeEdit" name="timMinSaat">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>104</y>
+       <width>60</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="displayFormat">
+      <string>HH:mm</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tabDiger">
+    <attribute name="title">
+     <string>Sco ve Icerik Okuma</string>
+    </attribute>
+    <widget class="QLabel" name="label_10">
+     <property name="geometry">
+      <rect>
+       <x>12</x>
+       <y>8</y>
+       <width>150</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Icerik Okuma Süresi (sn)    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="spnSureArtim">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>165</x>
+       <y>8</y>
+       <width>50</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <number>10</number>
+     </property>
+     <property name="maximum">
+      <number>600</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
+   </widget>
   </widget>
   <widget class="QPushButton" name="btnKulSif">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>184</y>
+     <x>16</x>
+     <y>208</y>
      <width>201</width>
      <height>41</height>
     </rect>
@@ -146,236 +437,6 @@
    </property>
    <property name="text">
     <string>Kullanıcı Adı/Şifre Al</string>
-   </property>
-  </widget>
-  <widget class="QTimeEdit" name="timMinSaat">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>100</y>
-     <width>60</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="displayFormat">
-    <string>HH:mm</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_4">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>100</y>
-     <width>130</width>
-     <height>13</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>En erken ders saati    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_5">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>130</y>
-     <width>130</width>
-     <height>13</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>En geç ders saati    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QTimeEdit" name="timMaxSaat">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>130</y>
-     <width>60</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="displayFormat">
-    <string>HH:mm</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="cbxTekrarAcma">
-   <property name="geometry">
-    <rect>
-     <x>350</x>
-     <y>100</y>
-     <width>82</width>
-     <height>13</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_6">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>100</y>
-     <width>120</width>
-     <height>13</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Dersi bir kez aç    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_7">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>10</y>
-     <width>120</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Timer kontrol dakika    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="spnTimerDk">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>350</x>
-     <y>10</y>
-     <width>30</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="minimum">
-    <number>1</number>
-   </property>
-   <property name="maximum">
-    <number>3</number>
-   </property>
-   <property name="value">
-    <number>1</number>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="spnTekrarEnGec">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>350</x>
-     <y>128</y>
-     <width>40</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="minimum">
-    <number>1</number>
-   </property>
-   <property name="maximum">
-    <number>10</number>
-   </property>
-   <property name="value">
-    <number>5</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_8">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>130</y>
-     <width>120</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>En geç kaç dk.    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="spnGuncellemeDk">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>350</x>
-     <y>40</y>
-     <width>40</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="minimum">
-    <number>60</number>
-   </property>
-   <property name="maximum">
-    <number>480</number>
-   </property>
-   <property name="singleStep">
-    <number>30</number>
-   </property>
-   <property name="value">
-    <number>60</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_9">
-   <property name="geometry">
-    <rect>
-     <x>195</x>
-     <y>40</y>
-     <width>145</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Ders program güncelleme    : </string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnLogReset">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>240</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Log sıfırla</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="radKaynak">
-   <property name="geometry">
-    <rect>
-     <x>248</x>
-     <y>70</y>
-     <width>137</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Kaynak: Program</string>
    </property>
   </widget>
  </widget>
