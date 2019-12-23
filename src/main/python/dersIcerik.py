@@ -284,7 +284,7 @@ class dersIcerik(QDialog):
             sayfalar=[]
             ii = 0
             for d in dizin:
-                if d['sure'] <= (min+self.ctx.SureArtim) or d['ad'][:13]=='Değerlendirme':
+                if d['sure'] <= (min+self.ctx.SureArtim) or (self.ctx.IcerikDS and d['ad'][:13]=='Değerlendirme') or self.ctx.IcerikTum:
                     sayfalar.append({'ad': d['ad'] })
                     sayfalar[ii]['link'] = f"{self.ctx.adres}/index.php?Reque=dersIcerikView&dersManifest={d['ss']}&manifestKey={d['kk']}&DP={d['dp']}&ss={ss}"
                     ii += 1
@@ -454,6 +454,8 @@ class dersIcerik(QDialog):
                 div = soup.find('div', {'class': 'icerik_sayfasi'})
                 if not div:
                     div = soup.find('div', {'id': 'iceriksayfa'})
+                if not div:
+                    div = soup.find('div', {'id': 'icerik'})
                 if div:
                     self.txtDers.setPlainText(div.text)
                 else:
@@ -481,9 +483,13 @@ class dersIcerik(QDialog):
             # if debug: print (f"degerlendirmeSorulariGetir: kaynak={kaynak}")
             yanit = self.ctx.getSession().get(kaynak, cookies=self.ctx.cerezler)
             # if debug: print(f"degerlendirmeSorulariGetir:", yanit.encoding)
-            yanit.encoding = 'UTF-8'
+            yanit.encoding = 'utf-8'
             if yanit.status_code!=200: return yanit.status_code
-            sonuc = yanit.json()
+            try:
+                sonuc = yanit.json()
+            except json.decoder.JSONDecodeError:
+                # if debug: print("yanit=", yanit, "kaynak", kaynak, yanit.status_code, f"text=\n", yanit.text)
+                return yanit.text
             # if debug: print("degerlendirmeSorulariGetir: sonuc=", sonuc)
             quiz = sonuc['quiz']
             i = 0

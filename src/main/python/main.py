@@ -86,6 +86,8 @@ class AppContext(ApplicationContext):
             #ikinci tab
             self.spnSureArtim.setValue(self.ctx.SureArtim)
             self.cbxIcerikOto.setChecked(True if self.ctx.IcerikOto else False)
+            self.cbxIcerikDS.setChecked(True if self.ctx.IcerikDS else False)
+            self.cbxIcerikTum.setChecked(True if self.ctx.IcerikTum else False)
             self.buttonBox.accepted.connect(self.applyAll)
             self.buttonBox.rejected.connect(self.cancel)
             self.tabWidget.setCurrentIndex(0)
@@ -133,6 +135,10 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('IcerikOkuma', 'SureArtim',str(self.ctx.SureArtim))
             self.ctx.IcerikOto = self.cbxIcerikOto.isChecked()
             self.ctx.ayarYaz('IcerikOkuma', 'OtomatikBasla', 'Evet' if self.ctx.IcerikOto else 'Hayir')
+            self.ctx.IcerikDS = self.cbxIcerikDS.isChecked()
+            self.ctx.ayarYaz('IcerikOkuma', 'SorulariOku', 'Evet' if self.ctx.IcerikDS else 'Hayir')
+            self.ctx.IcerikTum = self.cbxIcerikTum.isChecked()
+            self.ctx.ayarYaz('IcerikOkuma', 'TumunuOku', 'Evet' if self.ctx.IcerikTum else 'Hayir')
 
     def ayarlariAc(self):
         self.ctx.Ayarlar(self.ctx)
@@ -181,6 +187,8 @@ class AppContext(ApplicationContext):
         if ayarDeger is None: ayarDeger = 10 #icerik okuma süre artırım
         self.ctx.SureArtim = int(ayarDeger)
         self.ctx.IcerikOto = False if self.ctx.ayarOku('IcerikOkuma', 'OtomatikBasla') == 'Hayir' else True
+        self.ctx.IcerikDS = False if self.ctx.ayarOku('IcerikOkuma', 'SorulariOku') == 'Hayir' else True
+        self.ctx.IcerikTum = True if self.ctx.ayarOku('IcerikOkuma', 'TumunuOku') == 'Evet' else False
         self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj') #gelen mesaj sayısı, en son
 
 #AYAR-LOG-ÇEREZ-RESPONSE DOSYA İŞLEMLERİ

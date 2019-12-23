@@ -32,21 +32,25 @@ Ders İçerikleri menüsünden:
   yerine;
   - Her ders için minimum okuma süresi olan ders tespit edilir. Bu süreden en fazla 10 saniye daha fazla okunmuş
   olanlar yeniden okuma listesine alınır. Bu 10 saniyeyi ayarlardan artırabilirsiniz.
-  - Her sayfa 10 saniye süre ile açılır. Bitine işlem durur ve tablo güncellenir. 
-  
-
+  - Her sayfa 10 saniye süre ile açılır. Bitine işlem durur ve tablo güncellenir.
+  - Tüm sayfaların okumaları bittikten sonra Ayarlar'dan "Değerlendirme sorularını hep oku" ayarını işaretleyip 
+  sadece soruları getirebilirsiniz. Böylece dersi gözden geçirmiş olursunuz.  
+===============================================================================<br>
 **Ayarlar** açıklaması:<br>
 - Kaç dakika önce     : ders sayfası, ders saatinden kaç dakika önce açılsın. def=3
 - Debug (log tut)     : bir dosyaya (ve/veya konsola) debug bilgileri yazılsın def=hayır
 - Online (siteden al) : uygulama online mı çalışsın, yoksa indirdiği responselar üzerinden offline mı def:evet
-- En erken, En geç ders saati : bu saatler dışında ders programı güncellemesi yapma, ders açma def:17.30-23.30
+- En erken, En geç ders saati      : bu saatler dışında ders programı güncellemesi yapma, ders açma def:17.30-23.30
 - Timer kontrol dakika: otomatik işlemler kaç dakikada bir çalışsın (program kontrol) def=1
-- Ders program güncelleme     : ders programını siteden ne periyodda güncellesin def=120
+- Ders program güncelleme          : ders programını siteden ne periyodda güncellesin def=120
 - Kaynak              : Liste (ders listesinden oku) Program (ders programından oku)
 - Dersi bir kez aç    : otomatik açılan sayfada problem olması halinde dakikada bir sayfayı tekrar aç def=açma
 - En geç kaç dk.      : dersi birden fazla açacaksa, ders saatinden en geç kaç dk. sonra tekrar açsın (timer kontrol dakika'da belirtilen dk.da bir açılacak) def=10
 
 - Icerik okuma süresi : Otomatik ders içeriği okuma işleminde, her sayfa kaç saniye okunacak...
+- Otomatik başlat     : Icerik okuma penceresi açıldıktan sonra 10 sn içinde okumayı başlat, bitince kapat
+- Değerlendirme Sorularını hep oku : Minimum süre okunmuş olsa dahi Değerlendirme sorularını tekrar oku
+- Tüm içeriği tekrar oku           : Minimum süre okunmuş olsa dahi tüm sayfaları tekrar oku
 
 ===============================================================================<br>
 Python içinden kullanabilmek için ilgili modülleri kurmalısınız. (pip install ...)
