@@ -1,10 +1,10 @@
 # coding=utf-8
 from fbs_runtime.application_context.PyQt5 import ApplicationContext, cached_property
 import base64
-import sys
+# import sys
 # import os
 import webbrowser
-from datetime import datetime, timedelta
+# from datetime import datetime, timedelta
 import configparser
 import pickle
 # import requests
@@ -655,6 +655,13 @@ class AnaPencere(QMainWindow):
         self.ctx.adres = adres
         b = dersIcerik(self.ctx)
 
+    @pyqtSlot()
+    def dersArsivAc(self):
+        self.ctx.anaKlasor = anaKlasor
+        self.ctx.debug = debug
+        self.ctx.adres = adres
+        b = dersArsiv(self.ctx)
+
     def setupMenu(self):
         menu = self.menuBar().addMenu("&Dosya")
         # ayar menüsü
@@ -673,6 +680,10 @@ class AnaPencere(QMainWindow):
         dersIcerikM=QAction('Ders İçeri&kleri', self)
         dersIcerikM.triggered.connect(self.dersIcerikAc)
         menu.addAction(dersIcerikM)
+        #arşiv izleme
+        dersArsivM=QAction('Arşiv İ&zleme', self)
+        dersArsivM.triggered.connect(self.dersArsivAc)
+        menu.addAction(dersArsivM)
         # çıkış menüsü
         close_action = QAction('&Çıkış', self)
         close_action.triggered.connect(self.close)

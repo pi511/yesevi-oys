@@ -480,7 +480,7 @@ class dersIcerik(QDialog):
                         kaynak = ''
                     else:
                         kaynak = kaynak[0]
-            kaynak = self.ctx.adres + '/' + kaynak + quizname
+            kaynak = self.ctx.adres + '/' + kaynak + quizname #Viewer/temp/AYU/700/912/LRN//sorular/quiz1.txt
             # if debug: print (f"degerlendirmeSorulariGetir: kaynak={kaynak}")
             yanit = self.ctx.getSession().get(kaynak, cookies=self.ctx.cerezler)
             # if debug: print(f"degerlendirmeSorulariGetir:", yanit.encoding)

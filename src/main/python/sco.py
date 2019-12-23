@@ -14,7 +14,7 @@ import urllib.parse
 
 adres = 'http://sanal.yesevi.edu.tr'
 debug = False
-DERSSURESI = -90
+DERSSURESI = -90 #seçilen günkü dersler işlendikten sonra geçmesi gerek süre
 
 class scoGezgini(QDialog):
     def __init__(self, ctx):

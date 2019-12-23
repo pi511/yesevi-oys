@@ -2,5 +2,5 @@
     "app_name": "oys-yesevi",
     "author": "pi511",
     "main_module": "src/main/python/main.py",
-    "version": "1.2.2"
+    "version": "1.2.21"
 }
