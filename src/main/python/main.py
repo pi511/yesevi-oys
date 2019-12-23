@@ -85,6 +85,7 @@ class AppContext(ApplicationContext):
             self.timMaxSaat.setTime(QTime.fromString(self.ctx.maxSaat))
             #ikinci tab
             self.spnSureArtim.setValue(self.ctx.SureArtim)
+            self.cbxIcerikOto.setChecked(True if self.ctx.IcerikOto else False)
             self.buttonBox.accepted.connect(self.applyAll)
             self.buttonBox.rejected.connect(self.cancel)
             self.tabWidget.setCurrentIndex(0)
@@ -130,6 +131,8 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('DersProgram', 'TekrarEnGec',str(self.ctx.TekrarEnGec))
             self.ctx.SureArtim=self.spnSureArtim.value()
             self.ctx.ayarYaz('IcerikOkuma', 'SureArtim',str(self.ctx.SureArtim))
+            self.ctx.IcerikOto = self.cbxIcerikOto.isChecked()
+            self.ctx.ayarYaz('IcerikOkuma', 'OtomatikBasla', 'Evet' if self.ctx.IcerikOto else 'Hayir')
 
     def ayarlariAc(self):
         self.ctx.Ayarlar(self.ctx)
@@ -173,9 +176,11 @@ class AppContext(ApplicationContext):
         ayarDeger = self.ctx.ayarOku('DersProgram', 'TekrarEnGec')
         if ayarDeger is None: ayarDeger = '10' #dersten sonra tekrar açma en son sınır
         self.ctx.TekrarEnGec = int(ayarDeger)
+        #tab 2 ayarları
         ayarDeger = self.ctx.ayarOku('IcerikOkuma', 'SureArtim')
         if ayarDeger is None: ayarDeger = 10 #icerik okuma süre artırım
         self.ctx.SureArtim = int(ayarDeger)
+        self.ctx.IcerikOto = False if self.ctx.ayarOku('IcerikOkuma', 'OtomatikBasla') == 'Hayir' else True
         self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj') #gelen mesaj sayısı, en son
 
 #AYAR-LOG-ÇEREZ-RESPONSE DOSYA İŞLEMLERİ
@@ -406,6 +411,7 @@ class AppContext(ApplicationContext):
         try:
             if self.ctx.online:
                 yanit = self.ctx.getSession().get(adres + '/mesajlar', cookies=cerezler)
+                yanit.encoding = 'UTF-8'
                 sayfa = yanit.text
                 self.responseYaz(anaKlasor + '\\oys-mesaj.html', sayfa)
                 durum = yanit.status_code
@@ -446,7 +452,9 @@ class AppContext(ApplicationContext):
     def login(self):
         kullanici = self.ayarLogin()
         if self.ctx.online:
-            sayfa = self.ctx.getSession().get(adres).text
+            yanit = self.ctx.getSession().get(adres)
+            yanit.encoding = 'UTF-8'
+            sayfa = yanit.text
             self.responseYaz(anaKlasor + '\\oys-ana.html', sayfa)
         else:
             with open(anaKlasor + '\\oys-ana.html', 'r', encoding="utf-8") as dosya:
@@ -466,11 +474,12 @@ class AppContext(ApplicationContext):
                 kullanici[kullanici['deger_adi']] = gizli.attrs['value']
         # if debug: self.ctx.logYaz(f'login: kullanici={kullanici}') #şifreyi açık gösteriyor, gerekmezse kaldır
         if self.ctx.online:
-            response = self.ctx.getSession().post(adres + '/login', data=kullanici)
-            sayfa = response.text
+            yanit = self.ctx.getSession().post(adres + '/login', data=kullanici)
+            yanit.encoding = 'UTF-8'
+            sayfa = yanit.text
             self.responseYaz(anaKlasor + '\\oys-login.html', sayfa)
             # if debug: print('login: sayfa=', sayfa)
-            cerezler = response.cookies
+            cerezler = yanit.cookies
         else:
             with open(anaKlasor + '\\oys-login.html', 'r', encoding="utf-8") as dosya:
                 sayfa = dosya.read()
@@ -543,6 +552,7 @@ class AppContext(ApplicationContext):
         if mesajGetir:
             veri = {'page': 'get-badge-data', 'sg': ''}
             yanit = self.ctx.getSession().post(adres + '/getMessagePage', data=veri, cookies=cerezler)
+            yanit.encoding = 'UTF-8'
             sonuc = yanit.json()
             mesaj = eval(sonuc['Deger'])
             if debug: self.ctx.logYaz(f"oturumGetir: Gelen Mesaj Sayısı={mesaj['GELEN']}, Giden Mesaj={mesaj['GIDEN']}")
@@ -554,6 +564,7 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('Login', 'Mesaj', str(mesaj['GELEN']))
         veri = {'page': 'GTACSI', 'sg': ''}
         yanit = self.ctx.getSession().post(adres + '/getMessagePage', data=veri, cookies=cerezler)
+        yanit.encoding = 'UTF-8'
         sonuc = yanit.json()
         oturum = sonuc['Deger']
         if debug: print(f'oturumGetir: session={oturum}')
@@ -763,16 +774,17 @@ class dersProgrami(QDialog):
                 if debug: self.ctx.logYaz("dersProgramiGetir: Giriş Yapılmadı, iptal?")
                 return None
             cerezler = self.ctx.cerezOku()
-            response = self.ctx.getSession().post(adres + '/ders_islemleri_ekran', cookies=cerezler)
-            yanit = response.text
-            self.ctx.responseYaz(anaKlasor + '\\oys-ders.html', yanit)
+            yanit = self.ctx.getSession().post(adres + '/ders_islemleri_ekran', cookies=cerezler)
+            yanit.encoding = 'UTF-8'
+            sayfa = yanit.text
+            self.ctx.responseYaz(anaKlasor + '\\oys-ders.html', sayfa)
             oturum = self.ctx.oturumGetir(cerezler)
         else:
             with open(anaKlasor + '\\oys-ders.html', 'r', encoding="utf-8") as dosya:
-                yanit = dosya.read()
+                sayfa = dosya.read()
                 dosya.close()
             oturum = self.ctx.ayarOku('Login', 'oturum')
-        soup = BeautifulSoup(yanit, features='html.parser')
+        soup = BeautifulSoup(sayfa, features='html.parser')
         if self.ctx.dpKaynak == 'Liste':
             bulunandersler = soup.find_all('div', {'class': 'card hover make-it-slow card-items'})
             i = 0
@@ -922,4 +934,4 @@ if __name__ == '__main__':
     sys.exit(exit_code)
 
 
-# TODO: http://sanal.yesevi.edu.tr/api/xml?action=common-info   breezesession almanın tavsiye edilen yolu, getCommonInfo
+#INFO: http://sanal.yesevi.edu.tr/api/xml?action=common-info   breezesession almanın tavsiye edilen yolu, getCommonInfo

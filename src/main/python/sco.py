@@ -45,6 +45,7 @@ class scoGezgini(QDialog):
             if not self.ctx.onlineOldu: self.ctx.onlineOl()
             url=adres + '/api/xml?action=report-my-meetings'+poturum
             yanit = self.ctx.session.get(url)
+            yanit.encoding = 'UTF-8'
             if debug: print(f"getMyMeetings: adres={url}")
             sayfa = yanit.text
             self.ctx.responseYaz(mydosya, sayfa)
@@ -119,8 +120,10 @@ class scoGezgini(QDialog):
             url= adres + '/api/xml?action=sco-expanded-contents&sco-id=' + scoId + poturum
             if oturum is None:
                 yanit = self.ctx.session.get(url)
+                yanit.encoding = 'UTF-8'
             else:
                 yanit = self.ctx.session.get(url, cookies=self.ctx.cerezler)
+                yanit.encoding = 'UTF-8'
             if debug: print(f"getDosyalar: adres={url}")
             sayfa = yanit.text
             self.ctx.responseYaz(scodosya, sayfa)
@@ -215,10 +218,12 @@ class scoGezgini(QDialog):
         dosyaadi = self.dosyalar[d]['dosyaadi']
         url = f"{adres}{self.dosyalar[d]['url']}source/{urllib.request.pathname2url(dosyaadi)}" + '?session=' + self.ctx.oturum
         yanit= self.ctx.session.get(url, headers=self.setHeaders())
+        yanit.encoding = 'UTF-8'
         durum = yanit.status_code
         dosyaboyu = yanit.headers.get('content-length')
         if debug: print(f"dosyaGetir: ilk deneme={durum} dosyaboyutu={self.readable_size(dosyaboyu)} ({dosyaboyu} bytes)")
         yanit = self.ctx.session.get(url, stream= True, headers=self.setHeaders())  #ikinci deneme, ilk denemede inmiyor genelde
+        yanit.encoding = 'UTF-8'
         durum = yanit.status_code
         if debug: print(f"dosyaGetir: gelenHeader={yanit.headers}")
         # import urllib.request
@@ -233,6 +238,7 @@ class scoGezgini(QDialog):
             dosyaadi = f"{self.dosyalar[d]['scoid']}.zip"
             url = f"{adres}{self.dosyalar[d]['url']}output/{dosyaadi}?download=zip" + '&session=' + self.ctx.oturum
             yanit = self.ctx.session.get(url, cookies=self.ctx.cerezler, stream= True)
+            yanit.encoding = 'UTF-8'
             durum = yanit.status_code
             soup=BeautifulSoup(yanit.text[:100],'html.parser')
             sonuc=soup.find('title')

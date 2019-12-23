@@ -25,7 +25,7 @@ Ders İçerikleri menüsünden:
   - Bilgiler ilk okumada veritabanına kayıt edilir. 
   - Güncel durum için 'İçerik Durumlarını Güncelle' butonunu kullanabilirsiniz.
   - Tablodan bir ders seçip sağ alttaki ...Başlat butonuna basın.
-  - Yeni bir pencere açılacak ve 5 saniye içinde otomatik okuma başlayacaktır.
+  - Yeni bir pencere açılacak ve 10 saniye içinde otomatik okuma başlayacaktır.
   - İsterseniz Başlat'a basıp hemen başlatabilirsiniz.
   - Sistemde okuma süreleri değişik bir algorita ile dönmektedir. İlk sayfalarda 3 saniye, 4 saniye vs gibi
   süreler varken, sonrakilerde son tarihten sonra geçen süre hesaplanmıştır. Bu algoritmayı çözmekle uğraşmak 

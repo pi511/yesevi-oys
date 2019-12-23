@@ -131,15 +131,16 @@ class dersIcerik(QDialog):
                 if debug: self.ctx.logYaz("dersDurumGetir: Giriş Yapılmadı, iptal?")
                 self.ctx.login()
             cerezler = self.ctx.cerezOku()
-            response = self.ctx.getSession().post(self.ctx.adres + '/ders_islemleri_ekran', cookies=cerezler)
-            yanit = response.text
-            self.ctx.responseYaz(mydosya, yanit)
+            yanit = self.ctx.getSession().post(self.ctx.adres + '/ders_islemleri_ekran', cookies=cerezler)
+            yanit.encoding = 'UTF-8'
+            sayfa = yanit.text
+            self.ctx.responseYaz(mydosya, sayfa)
         else:
             with open(mydosya, 'r', encoding="utf-8") as dosya:
-                yanit = dosya.read()
+                sayfa = dosya.read()
                 dosya.close()
         try:
-            soup = BeautifulSoup(yanit, features='html.parser')
+            soup = BeautifulSoup(sayfa, features='html.parser')
             div=soup.find('div',{'class':'col-md-12 tab-pane active', 'id':'contentHaftalikDers'})
             bulunandersler = div.find_all('div', {'class': 'card hover make-it-slow card-items'})
             i = 0
@@ -175,6 +176,7 @@ class dersIcerik(QDialog):
         self.ctx.onlineOl()
         cerezler=self.ctx.cerezOku()
         yanit = self.ctx.getSession().post(self.ctx.adres + '/ders_islemleri_ekran', data=veri, cookies=cerezler)
+        yanit.encoding = 'UTF-8'
         sonuc = yanit.json()
         basarili = sonuc['Basarili']
         if basarili:
@@ -207,6 +209,7 @@ class dersIcerik(QDialog):
         self.ctx.onlineOl()
         cerezler=self.ctx.cerezOku()
         yanit = self.ctx.getSession().post(self.ctx.adres + '/ders_islemleri_ekran', data=veri, cookies=cerezler)
+        yanit.encoding = 'UTF-8'
         sonuc = yanit.json()
         basarili = sonuc['Basarili']
         if basarili:
@@ -233,14 +236,15 @@ class dersIcerik(QDialog):
         self.ctx.onlineOl()
         cerezler = self.ctx.cerezOku()
         if self.ctx.online:
-            sonuc = self.ctx.getSession().get(self.dersler[secilen]['Link'], cookies=cerezler)
-            yanit = sonuc.text
-            self.ctx.responseYaz(mydosya, yanit)
+            yanit = self.ctx.getSession().get(self.dersler[secilen]['Link'], cookies=cerezler)
+            yanit.encoding = 'UTF-8'
+            sayfa = yanit.text
+            self.ctx.responseYaz(mydosya, sayfa)
         else:
             with open(mydosya, 'r', encoding="utf-8") as dosya:
-                yanit = dosya.read()
+                sayfa = dosya.read()
                 dosya.close()
-        soup = BeautifulSoup(yanit, features='html.parser')
+        soup = BeautifulSoup(sayfa, features='html.parser')
         scripts = soup.find_all('script')
         for script in scripts:
             # if debug: print(f"dersIcerikOku: script={script}")
@@ -257,6 +261,7 @@ class dersIcerik(QDialog):
         if debug: print(f"dersIcerikOku: len={len(ogrStatus)} ogrStatus=", ogrStatus)
         veri = {'GMOD': 'Start'}
         yanit = self.ctx.getSession().post(self.dersler[secilen]['Link'], data=veri, cookies=cerezler)
+        yanit.encoding = 'UTF-8'
         # if debug: print(yanit.text)
         sonuc = yanit.json()
         basarili = sonuc['Basarili']
@@ -335,47 +340,57 @@ class dersIcerik(QDialog):
             self.initUI()
             self.sayfalar = sayfalar
             self.sayfano = 0
+            self.toplamsayfa = 0
             self.saniye = 0
+            self.toplamsure = 0
             self.run = False
-            self.otomatikZamanla()
+            if self.ctx.IcerikOto: self.otomatikZamanla()
             self.exec_()
 
         def initUI(self):
             self.setWindowTitle(self.title)
             self.lblDersAd = QLabel('Ders Adı', self)
             self.txtLink = QLineEdit('Ders Bağlantısı',self)
+            self.btnBar = QHBoxLayout()
             self.lblStatus = QLabel('<Status>', self)
-            self.btnSure = QPushButton('Otomatik Okumayı Başlat', self)
+            self.btnGeri = QPushButton('Geri',self)
+            self.btnBaslat = QPushButton('Başlat', self)
+            self.btnIleri = QPushButton('İleri',self)
+            self.btnBar.addWidget(self.lblStatus)
+            self.btnBar.addWidget(self.btnGeri)
+            self.btnBar.addWidget(self.btnBaslat)
+            self.btnBar.addWidget(self.btnIleri)
             self.txtDers = QPlainTextEdit('İçerik', self)
             self.vlayout = QVBoxLayout()
             self.vlayout.addWidget(self.lblDersAd)
             self.vlayout.addWidget(self.txtLink)
-            self.vlayout.addWidget(self.lblStatus)
-            self.btnSure.clicked.connect(self.btnBasla)
-            self.vlayout.addWidget(self.btnSure)
+            self.vlayout.addLayout(self.btnBar)
+            self.btnGeri.clicked.connect(self.GeriClicked)
+            self.btnBaslat.clicked.connect(self.BaslatClicked)
+            self.btnIleri.clicked.connect(self.IleriClicked)
             self.vlayout.addWidget(self.txtDers)
             self.setLayout(self.vlayout)
-            self.setGeometry(511, 511, 511, 511)
+            self.setGeometry(115, 115, 800, 511)
 
         @pyqtSlot()
         def closeEvent(self, event):
             if self.run:
-                self.btnBasla()
+                self.BaslatClicked()
             event.accept()
 
         def otomatikZamanla(self):
             self.timerX = QTimer()
             self.timerX.timeout.connect(self.otomatikBasla)
-            self.timerX.start(1000 * 5) # 10 saniye sonra otomatik başla
+            self.timerX.start(1000 * 10) # 10 saniye sonra otomatik başla
 
         def otomatikBasla(self):
             self.timerX.stop()
             self.timerX=None
-            self.btnBasla()
+            self.BaslatClicked()
 
         @pyqtSlot()
-        def btnBasla(self):
-            if self.timerX:
+        def BaslatClicked(self):
+            if self.timerX is not None:
                 self.timerX.stop()
                 self.timerX = None
             if not self.run:
@@ -388,33 +403,52 @@ class dersIcerik(QDialog):
                 self.run = False
                 self.timer.stop()
                 self.timer=None
-                self.btnSure.setText(f"({(self.saniye % self.ctx.SureArtim)+1})..{self.ctx.SureArtim} Devam Et")
-                self.ctx.logYaz(f"btnBasla: {self.sayfano} adet sayfa toplam {self.saniye} saniye  okundu.")
+                self.btnBaslat.setText(f"({(self.saniye % self.ctx.SureArtim) + 1})..{self.ctx.SureArtim} Devam Et")
+                self.ctx.logYaz(f"BaslaClicked: {self.toplamsayfa} adet sayfa toplam {self.toplamsure} saniye  okundu.")
+
+        def sayacSifirla(self):
+            self.saniye -= (self.saniye % self.ctx.SureArtim)
+
+        def GeriClicked(self):
+            if self.run:
+                if self.sayfano > 1:
+                    self.sayfano -= 2
+                    self.sayacSifirla()
+
+        def IleriClicked(self):
+            if self.run:
+                self.sayfano += 0
+                self.sayacSifirla()
 
         def IcerikOkuTimer(self):
             if (self.saniye % self.ctx.SureArtim)==0:
                 self.IcerikOku(self.sayfano)
                 self.sayfano += 1
+                self.toplamsayfa += 1
                 if self.sayfano==len(self.sayfalar):
                     self.sayfano = 0
-                    self.btnBasla()
-                    self.btnSure.setText('Otomatik Okumayı Tekrar Başlat')
-                    self.saniye = 0
+                    self.BaslatClicked()
+                    self.btnBaslat.setText('Tekrar Başlat')
+                    if self.ctx.IcerikOto: self.close()
+                    self.sayacSifirla()
             else:
-                self.btnSure.setText(f"({(self.saniye % self.ctx.SureArtim)+1})..{self.ctx.SureArtim} Durdur")
-                self.setWindowTitle(f"{self.title} Geçen süre: {self.saniye+1}")
+                self.btnBaslat.setText(f"({(self.saniye % self.ctx.SureArtim) + 1})..{self.ctx.SureArtim} Durdur")
+                self.setWindowTitle(f"{self.title} Geçen süre: {self.toplamsure+1}")
             self.saniye += 1
+            self.toplamsure += 1
 
         def IcerikOku(self, no):
             sayfalar = self.sayfalar
-            sonuc = self.ctx.getSession().get( sayfalar[no]['link'] , cookies=self.ctx.cerezler)
-            durum = sonuc.status_code
+            yanit = self.ctx.getSession().get( sayfalar[no]['link'] , cookies=self.ctx.cerezler)
+            yanit.encoding = 'UTF-8'
+            durum = yanit.status_code
             if durum==200:
+                sonuc = yanit.text
                 self.lblDersAd.setText(f"{sayfalar[no]['ad']} {no+1}/{len(sayfalar)}")
                 self.txtLink.setText( sayfalar[no]['link'] )
-                self.lblStatus.setText(f"Durum= HTTP<{sonuc.status_code}>")
+                self.lblStatus.setText(f"Durum= HTTP<{durum}>")
                 self.txtDers.clear()
-                soup = BeautifulSoup(sonuc.text, features='html.parser')
+                soup = BeautifulSoup(sonuc, features='html.parser')
                 # div = soup.find('div', {'id': 'sound'})
                 # div = soup.select('div#iceriksayfa,div.icerik_sayfasi') # iki attribute'dan birini aramak için
                 div = soup.find('div', {'class': 'icerik_sayfasi'})
@@ -427,8 +461,8 @@ class dersIcerik(QDialog):
                     if div:
                         self.txtDers.appendHtml( self.degerlendirmeSorulariGetir(soup, div.text) )
                     else:
-                        self.ctx.responseYaz(self.ctx.anaKlasor + f"\\icerik\\oys-ds{no}.html", sonuc.text)
-                        self.txtDers.appendHtml(sonuc.text)
+                        self.ctx.responseYaz(self.ctx.anaKlasor + f"\\icerik\\oys-ds{no}.html", sonuc)
+                        self.txtDers.appendHtml(sonuc)
                 if debug: print(f"IcerikOku: ders={sayfalar[no]['ad']} status={durum} link={sayfalar[no]['link']}")
 
         def degerlendirmeSorulariGetir(self, soup, quizname):
@@ -477,4 +511,4 @@ class dersIcerik(QDialog):
 if __name__ == '__main__':
     print('main.py çalıştır')
 
-#TODO event işleme: QCoreApplication.processEvents()
+#INFO event işleme: QCoreApplication.processEvents()
