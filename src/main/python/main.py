@@ -536,15 +536,16 @@ class AppContext(ApplicationContext):
         cerezler = self.ctx.cerezOku()
         cerezler['BREEZESESSION'] = oturum
         if session is None:
-            sonuc = requests.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+            yanit = requests.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
         else:
-            sonuc = session.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
-        yenicerez= sonuc.cookies
+            yanit = session.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+        yenicerez= yanit.cookies
+        yanit.encoding = 'UTF-8'
         yenicerez['BREEZESESSION'] = oturum
         if 'BreezeCCookie' in yenicerez:
             cerezler['BreezeCCookie'] = yenicerez['BreezeCCookie']
         self.ctx.cerezYaz(cerezler)
-        soup = BeautifulSoup(sonuc.text, 'lxml')
+        soup = BeautifulSoup(yanit.text, 'lxml')
         name = soup.find('name')
         if name: name = name.text
         login = soup.find('login')

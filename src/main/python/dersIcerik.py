@@ -266,7 +266,7 @@ class dersIcerik(QDialog):
         sonuc = yanit.json()
         basarili = sonuc['Basarili']
         if basarili:
-            print("ok")
+            # print("ok")
             ks, ss, dizin = self.dizinOlustur(arrayData)
             ss += ks
             if debug: print(f"dersIcerikOku: klasör={ks} sayfa={ss}")
@@ -422,10 +422,11 @@ class dersIcerik(QDialog):
 
         def IcerikOkuTimer(self):
             if (self.saniye % self.ctx.SureArtim)==0:
-                self.IcerikOku(self.sayfano)
+                if self.sayfano < len(self.sayfalar):
+                    self.IcerikOku(self.sayfano)
                 self.sayfano += 1
                 self.toplamsayfa += 1
-                if self.sayfano==len(self.sayfalar):
+                if self.sayfano > len(self.sayfalar):
                     self.sayfano = 0
                     self.BaslatClicked()
                     self.btnBaslat.setText('Tekrar Başlat')
@@ -487,7 +488,7 @@ class dersIcerik(QDialog):
             if yanit.status_code!=200: return yanit.status_code
             try:
                 sonuc = yanit.json()
-            except json.decoder.JSONDecodeError:
+            except: #json.decoder.JSONDecodeError
                 # if debug: print("yanit=", yanit, "kaynak", kaynak, yanit.status_code, f"text=\n", yanit.text)
                 return yanit.text
             # if debug: print("degerlendirmeSorulariGetir: sonuc=", sonuc)
