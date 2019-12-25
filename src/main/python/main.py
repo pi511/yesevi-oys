@@ -16,6 +16,7 @@ from PyQt5.QtCore import Qt, QTimer, QTime, pyqtSlot
 import sqlite3
 from sco import *
 from dersIcerik import *
+from dersArsiv import *
 
 debug = False
 anaKlasor = os.environ['USERPROFILE']+'\\oys-yesevi'
@@ -88,6 +89,9 @@ class AppContext(ApplicationContext):
             self.cbxIcerikOto.setChecked(True if self.ctx.IcerikOto else False)
             self.cbxIcerikDS.setChecked(True if self.ctx.IcerikDS else False)
             self.cbxIcerikTum.setChecked(True if self.ctx.IcerikTum else False)
+            self.FFMpeg=self.ctx.FFMpeg
+            self.txtFFMpeg.setText(self.FFMpeg)
+            self.btnFFMpeg.clicked.connect(self.dosyaFFMpeg)
             self.buttonBox.accepted.connect(self.applyAll)
             self.buttonBox.rejected.connect(self.cancel)
             self.tabWidget.setCurrentIndex(0)
@@ -98,6 +102,14 @@ class AppContext(ApplicationContext):
         def radClicked(self):
             if self.radKaynak.isChecked(): self.radKaynak.setText('Kaynak: Liste')
             else: self.radKaynak.setText('Kaynak: Program')
+
+        def dosyaFFMpeg(self):
+            options = QFileDialog.Options()
+            options |= QFileDialog.ReadOnly
+            fileName, _ = QFileDialog.getOpenFileName(self, "Ayarlar - FFMPEG.exe Dosyası", self.ctx.FFMpeg ,"Executable Files (*.exe)")
+            if fileName!='':
+                self.FFMpeg = fileName
+                self.txtFFMpeg.setText(self.FFMpeg)
 
         def logReset(self):
             if self.ctx.TimedMessageBox('Ayarlar',f'Log dosyası {logfile} içeriği silinecek, emin misiniz?',QMessageBox.Yes | QMessageBox.No , timeout=10, defaultBtn=QMessageBox.No, noExec=True).exec_()==QMessageBox.Yes:
@@ -139,6 +151,8 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('IcerikOkuma', 'SorulariOku', 'Evet' if self.ctx.IcerikDS else 'Hayir')
             self.ctx.IcerikTum = self.cbxIcerikTum.isChecked()
             self.ctx.ayarYaz('IcerikOkuma', 'TumunuOku', 'Evet' if self.ctx.IcerikTum else 'Hayir')
+            self.ctx.FFMpeg = self.FFMpeg
+            self.ctx.ayarYaz('Ayar', 'FFMpeg',self.ctx.FFMpeg)
 
     def ayarlariAc(self):
         self.ctx.Ayarlar(self.ctx)
@@ -189,6 +203,9 @@ class AppContext(ApplicationContext):
         self.ctx.IcerikOto = False if self.ctx.ayarOku('IcerikOkuma', 'OtomatikBasla') == 'Hayir' else True
         self.ctx.IcerikDS = False if self.ctx.ayarOku('IcerikOkuma', 'SorulariOku') == 'Hayir' else True
         self.ctx.IcerikTum = True if self.ctx.ayarOku('IcerikOkuma', 'TumunuOku') == 'Evet' else False
+        ayarDeger = self.ctx.ayarOku('Ayar', 'FFMpeg')
+        if ayarDeger is None: ayarDeger='D:\\pi\\util\\ffmpeg\\ffmpeg.exe'
+        self.ctx.FFMpeg = ayarDeger
         self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj') #gelen mesaj sayısı, en son
 
 #AYAR-LOG-ÇEREZ-RESPONSE DOSYA İŞLEMLERİ
@@ -257,6 +274,13 @@ class AppContext(ApplicationContext):
             if debug: self.ctx.logYaz(f'responseYaz: {dosyaadi} yazıldı')
             dosya.write(icerik)
             dosya.close()
+
+    def responseOku(self, mydosya):
+        with open(mydosya, 'r', encoding="utf-8") as dosya:
+            yanit = dosya.read()
+            dosya.close()
+        return yanit
+
 
 #VERİTABANI İŞLEMLERİ
 
@@ -664,10 +688,6 @@ class AnaPencere(QMainWindow):
 
     def setupMenu(self):
         menu = self.menuBar().addMenu("&Dosya")
-        # ayar menüsü
-        ayarlari_ac = QAction('&Ayarlar', self)
-        ayarlari_ac.triggered.connect(self.ctx.ayarlariAc)
-        menu.addAction(ayarlari_ac)
         #ders programı menüsü
         dersProgramiM = QAction('&Ders Programı ve İzleme', self)
         dersProgramiM.triggered.connect(self.dersProgramiAc)
@@ -684,6 +704,10 @@ class AnaPencere(QMainWindow):
         dersArsivM=QAction('Arşiv İ&zleme', self)
         dersArsivM.triggered.connect(self.dersArsivAc)
         menu.addAction(dersArsivM)
+        # ayar menüsü
+        ayarlari_ac = QAction('&Ayarlar', self)
+        ayarlari_ac.triggered.connect(self.ctx.ayarlariAc)
+        menu.addAction(ayarlari_ac)
         # çıkış menüsü
         close_action = QAction('&Çıkış', self)
         close_action.triggered.connect(self.close)

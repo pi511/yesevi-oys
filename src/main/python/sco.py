@@ -15,6 +15,7 @@ import urllib.parse
 adres = 'http://sanal.yesevi.edu.tr'
 debug = False
 DERSSURESI = -90 #seçilen günkü dersler işlendikten sonra geçmesi gerek süre
+SCOKLASOR = '\\sco'
 
 class scoGezgini(QDialog):
     def __init__(self, ctx):
@@ -23,7 +24,7 @@ class scoGezgini(QDialog):
         self.ctx = ctx
         uic.loadUi(self.ctx.get_resource('scoExplore.ui'), self)
         debug = self.ctx.debug
-        os.makedirs(self.ctx.anaKlasor + '\\sco', exist_ok=True)
+        os.makedirs(self.ctx.anaKlasor + SCOKLASOR, exist_ok=True)
         self.dersler=[]
         self.mCount, self.MyMeetings=self.getMyMeetings()
         if self.mCount is None:
@@ -114,7 +115,7 @@ class scoGezgini(QDialog):
         refler = {}
         if oturum: poturum='&session='+oturum
         else: poturum=''
-        scodosya=self.ctx.anaKlasor + f'\\sco\\oys-scoexp{scoId}.xml'
+        scodosya=self.ctx.anaKlasor + f'{SCOKLASOR}\\oys-scoexp{scoId}.xml'
         if not os.path.isfile(scodosya) or poturum!='':
             if not self.ctx.onlineOldu: self.ctx.onlineOl()
             url= adres + '/api/xml?action=sco-expanded-contents&sco-id=' + scoId + poturum
@@ -214,6 +215,7 @@ class scoGezgini(QDialog):
         d=self.lstDosyalar.selectedIndexes()[0].row()
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
+        options |= QFileDialog.ReadOnly
         self.ctx.onlineOl()
         dosyaadi = self.dosyalar[d]['dosyaadi']
         url = f"{adres}{self.dosyalar[d]['url']}source/{urllib.request.pathname2url(dosyaadi)}" + '?session=' + self.ctx.oturum

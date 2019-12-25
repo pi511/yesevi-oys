@@ -36,6 +36,11 @@ Ders İçerikleri menüsünden:
   - Tüm sayfaların okumaları bittikten sonra Ayarlar'dan "Değerlendirme sorularını hep oku" ayarını işaretleyip 
   sadece soruları getirebilirsiniz. Böylece dersi gözden geçirmiş olursunuz.  
 ===============================================================================<br>
+Arşiv İzleme menüsünden:
+  - Ders listesinden dersi seçin
+  - Alttaki arşiv listesinden ders tarihini seçin
+  - Save butonuna basınca, ilgili arşiv video kaydının metne çevrilmiş dosyası (tape'si) oluşturulacak ve notepad ile açılacaktır.
+===============================================================================<br>
 **Ayarlar** açıklaması:<br>
 - Kaç dakika önce     : ders sayfası, ders saatinden kaç dakika önce açılsın. def=3
 - Debug (log tut)     : bir dosyaya (ve/veya konsola) debug bilgileri yazılsın def=hayır
@@ -51,7 +56,7 @@ Ders İçerikleri menüsünden:
 - Otomatik başlat     : Icerik okuma penceresi açıldıktan sonra 10 sn içinde okumayı başlat, bitince kapat
 - Değerlendirme Sorularını hep oku : Minimum süre okunmuş olsa dahi Değerlendirme sorularını tekrar oku
 - Tüm içeriği tekrar oku           : Minimum süre okunmuş olsa dahi tüm sayfaları tekrar oku
-
+- FFMPEG.exe yolu     : ffmpeg kütüphanesini yükleyin ve exe yolunu burada gösterin.
 ===============================================================================<br>
 Python içinden kullanabilmek için ilgili modülleri kurmalısınız. (pip install ...)
 exe'ye çevirmek için fbs modülünü indirip, aynı klasör yapısını oluşturun. Scriptlerden sanal ortamı activate.bat ile aktifleştirin.

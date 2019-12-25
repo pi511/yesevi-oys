@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import re
 import json
 SUREMAX = 999999
+ICERIKKLASOR = '\\icerik'
 
 class dersIcerik(QDialog):
     def __init__(self, ctx):
@@ -15,7 +16,7 @@ class dersIcerik(QDialog):
         debug = self.ctx.debug
         self.title = 'Ders İçerikleri'
         self.initUI()
-        os.makedirs(self.ctx.anaKlasor + '\\icerik', exist_ok=True)
+        os.makedirs(self.ctx.anaKlasor + ICERIKKLASOR, exist_ok=True)
         if self.dersTabloAl():
             self.exec()
 
@@ -150,7 +151,7 @@ class dersIcerik(QDialog):
                     icerikno=eleman.attrs['onclick'].split('"')[1]
                     durum, ders = self.dersIcerikDrm(icerikno)
                 else:
-                    print(eleman, "bulunanders=", bulunanders,"bulunandersler=", bulunandersler)
+                    if debug: print(f"dersDurumGetir: eleman={eleman} bulunanders={bulunanders} bulunandersler=", bulunandersler)
                     break
                 if not durum: break
                 dersler.append({'Ders': ders[0].strip()})
@@ -165,8 +166,8 @@ class dersIcerik(QDialog):
                 if debug: print(f"dersDurumGetir:{i} {dersler[i]}")
                 i += 1
             self.dbYazDersler(dersler)
-        except e:
-            print("Hata var",  sys.exc_info()[0] )
+        except:
+            if debug: print("dersDurumGetir: Hata var",  sys.exc_info()[0] )
             durum = False
         return durum, dersler
 
@@ -232,10 +233,10 @@ class dersIcerik(QDialog):
     def dersIcerikOku(self, secilen):
         if debug: print(f"dersIcerikOku: secilen ders[{secilen}]={self.dersler[secilen]}")
         self.ctx.TimedMessageBox('dersIcerikOku',f"Seçtiğiniz ders ({ self.dersler[secilen]['Ders'] })\nLütfen Bekleyiniz...",QMessageBox.Ok, 3)
-        mydosya=self.ctx.anaKlasor + f"\\icerik\\oys-icerik-{self.dersler[secilen]['Ders'][:8]}.html"
+        mydosya=self.ctx.anaKlasor + f"{ICERIKKLASOR}\\oys-icerik-{self.dersler[secilen]['Ders'][:8]}.html"
         self.ctx.onlineOl()
         cerezler = self.ctx.cerezOku()
-        if self.ctx.online:
+        if self.ctx.online or not os.path.isfile(mydosya):
             yanit = self.ctx.getSession().get(self.dersler[secilen]['Link'], cookies=cerezler)
             yanit.encoding = 'UTF-8'
             sayfa = yanit.text
@@ -344,7 +345,7 @@ class dersIcerik(QDialog):
             self.saniye = 0
             self.toplamsure = 0
             self.run = False
-            if self.ctx.IcerikOto: self.otomatikZamanla()
+            if self.ctx.IcerikOto: self.otomatikZamanla(10, self.otomatikBasla) # 10 saniye sonra otomatik başla
             self.exec_()
 
         def initUI(self):
@@ -378,10 +379,10 @@ class dersIcerik(QDialog):
                 self.BaslatClicked()
             event.accept()
 
-        def otomatikZamanla(self):
+        def otomatikZamanla(self, sure, func):
             self.timerX = QTimer()
-            self.timerX.timeout.connect(self.otomatikBasla)
-            self.timerX.start(1000 * 10) # 10 saniye sonra otomatik başla
+            self.timerX.timeout.connect(func)
+            self.timerX.start(1000 * sure)
 
         def otomatikBasla(self):
             self.timerX.stop()
@@ -405,6 +406,7 @@ class dersIcerik(QDialog):
                 self.timer=None
                 self.btnBaslat.setText(f"({(self.saniye % self.ctx.SureArtim) + 1})..{self.ctx.SureArtim} Devam Et")
                 self.ctx.logYaz(f"BaslaClicked: {self.toplamsayfa} adet sayfa toplam {self.toplamsure} saniye  okundu.")
+                self.otomatikZamanla(180, self.close) #oturum kapanabilir, 3 dakika sonra pencereyi kapat
 
         def sayacSifirla(self):
             self.saniye -= (self.saniye % self.ctx.SureArtim)
@@ -464,7 +466,7 @@ class dersIcerik(QDialog):
                     if div:
                         self.txtDers.appendHtml( self.degerlendirmeSorulariGetir(soup, div.text) )
                     else:
-                        self.ctx.responseYaz(self.ctx.anaKlasor + f"\\icerik\\oys-ds{no}.html", sonuc)
+                        self.ctx.responseYaz(self.ctx.anaKlasor + f"{ICERIKKLASOR}\\oys-ds{no}.html", sonuc)
                         self.txtDers.appendHtml(sonuc)
                 if debug: print(f"IcerikOku: ders={sayfalar[no]['ad']} status={durum} link={sayfalar[no]['link']}")
 
