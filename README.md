@@ -19,7 +19,7 @@ ScoGezgini menüsünden:
   - Bunun yerine dosya adlarının yanın sco-depth'lerini yazdım. Derinlik 2 olan daha kuvvetle muhtemel inecektir.
   - İlle de o dosyayı manuel indirmek isterseniz buradaki açıklamaları takip edin:
   - https://tarikozcan.wordpress.com/2017/07/14/turtepte-sanal-derste-gosterilen-sunulari-indirmek/
-===============================================================================<br>
+=============================================================================<br>
 Ders İçerikleri menüsünden:
   - Ders içerikleri okuma durumunuzu görebilirsiniz.
   - Bilgiler ilk okumada veritabanına kayıt edilir. 
@@ -35,12 +35,12 @@ Ders İçerikleri menüsünden:
   - Her sayfa 10 saniye süre ile açılır. Bitine işlem durur ve tablo güncellenir.
   - Tüm sayfaların okumaları bittikten sonra Ayarlar'dan "Değerlendirme sorularını hep oku" ayarını işaretleyip 
   sadece soruları getirebilirsiniz. Böylece dersi gözden geçirmiş olursunuz.  
-===============================================================================<br>
+=============================================================================<br>
 Arşiv İzleme menüsünden:
   - Ders listesinden dersi seçin
   - Alttaki arşiv listesinden ders tarihini seçin
   - Save butonuna basınca, ilgili arşiv video kaydının metne çevrilmiş dosyası (tape'si) oluşturulacak ve notepad ile açılacaktır.
-===============================================================================<br>
+=============================================================================<br>
 **Ayarlar** açıklaması:<br>
 - Kaç dakika önce     : ders sayfası, ders saatinden kaç dakika önce açılsın. def=3
 - Debug (log tut)     : bir dosyaya (ve/veya konsola) debug bilgileri yazılsın def=hayır
@@ -57,7 +57,7 @@ Arşiv İzleme menüsünden:
 - Değerlendirme Sorularını hep oku : Minimum süre okunmuş olsa dahi Değerlendirme sorularını tekrar oku
 - Tüm içeriği tekrar oku           : Minimum süre okunmuş olsa dahi tüm sayfaları tekrar oku
 - FFMPEG.exe yolu     : ffmpeg kütüphanesini yükleyin ve exe yolunu burada gösterin.
-===============================================================================<br>
+=============================================================================<br>
 Python içinden kullanabilmek için ilgili modülleri kurmalısınız. (pip install ...)
 exe'ye çevirmek için fbs modülünü indirip, aynı klasör yapısını oluşturun. Scriptlerden sanal ortamı activate.bat ile aktifleştirin.
 "fbs freeze" ile exe'ye çevirebilirsiniz.

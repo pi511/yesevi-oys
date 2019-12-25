@@ -37,8 +37,11 @@ class dersArsiv(QDialog):
         dersler = []
         durum = True
         mydosya=self.ctx.anaKlasor + '\\oys-ders.html'
-        dosyatarih = os.path.getmtime(mydosya)
-        fark = self.ctx.tarihfarki(self.ctx.bugun(), self.ctx.date2gun(datetime.fromtimestamp(dosyatarih)) )
+        if os.path.isfile(mydosya):
+            dosyatarih = os.path.getmtime(mydosya)
+            fark = self.ctx.tarihfarki(self.ctx.bugun(), self.ctx.date2gun(datetime.fromtimestamp(dosyatarih)) )
+        else:
+            fark = 0
         if not os.path.isfile(mydosya) or fark > 1:
             self.ctx.onlineOl()
             cerezler = self.ctx.cerezOku()
@@ -179,7 +182,7 @@ class dersArsiv(QDialog):
     def flv2wav(self,dosya, output_file):
         ''' https://github.com/SV3A/connect-grabber/blob/master/connect-grabber.py '''
         if debug: print(f"flv2wav: input={dosya} output={output_file}")
-        subprocess.Popen(['D:\\pi\\util\\ffmpeg\\ffmpeg.exe', '-i', dosya, '-f', 'wav', '-v', '0', '-y',output_file])
+        subprocess.call(['D:\\pi\\util\\ffmpeg\\ffmpeg.exe', '-i', dosya, '-f', 'wav', '-v', '0', '-y',output_file])
 
     def recognizeWav(self, wavfile, dosyaadi, logyazfunc):
         with wave.open(wavfile, 'r') as f:
