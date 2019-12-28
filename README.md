@@ -1,3 +1,5 @@
+![kaynak](Screenshots/oys-Menu.PNG)
+<br>
 # yesevi-oys
 Yesevi oys sisteminde dersleri saati geldiğinde otomatik başlatma uygulaması
 
@@ -6,8 +8,10 @@ Bu program ders saatinde tarayıcı sayfasını otomatik açar.
 Eve gittiğinizde bilgisayarınızı açın, programı çalıştırın. Otomatik izlemeyi başlat deyin. Bilgisayarın sesini açın.
 
 Ders başladığınız hocanızın "iyi akşamlar arkadaşlar" sesiyle, dersin başladığını anlayıp, derse katılabilirsiniz.
-===============================================================================<br>
-ScoGezgini menüsünden:
+<br>=============================================================================<br>
+![kaynak](Screenshots/ScoGezgini.PNG)
+<br><br>
+ScoGezgini menüsünden: 
   - Derslere ait sunumları indirebilirsiniz.
   - Takvimden ders günü seçtiğinizde alt kutuya o günkü dersler listelenir.
   - Alt kutudan dersi seçtiğinizde o derse ait indirilebilecek dosyalar sağ kutuya listelenir.
@@ -19,7 +23,10 @@ ScoGezgini menüsünden:
   - Bunun yerine dosya adlarının yanın sco-depth'lerini yazdım. Derinlik 2 olan daha kuvvetle muhtemel inecektir.
   - İlle de o dosyayı manuel indirmek isterseniz buradaki açıklamaları takip edin:
   - https://tarikozcan.wordpress.com/2017/07/14/turtepte-sanal-derste-gosterilen-sunulari-indirmek/
-=============================================================================<br>
+<br>===========================================================================<br>
+![kaynak](Screenshots/DersIcerikleri.PNG)
+![kaynak](Screenshots/IcerikOkuma.PNG)
+<br><br>
 Ders İçerikleri menüsünden:
   - Ders içerikleri okuma durumunuzu görebilirsiniz.
   - Bilgiler ilk okumada veritabanına kayıt edilir. 
@@ -35,12 +42,16 @@ Ders İçerikleri menüsünden:
   - Her sayfa 10 saniye süre ile açılır. Bitine işlem durur ve tablo güncellenir.
   - Tüm sayfaların okumaları bittikten sonra Ayarlar'dan "Değerlendirme sorularını hep oku" ayarını işaretleyip 
   sadece soruları getirebilirsiniz. Böylece dersi gözden geçirmiş olursunuz.  
-=============================================================================<br>
+<br>===========================================================================<br>
+![kaynak](Screenshots/ArsivKayit.PNG)
+<br><br>
 Arşiv İzleme menüsünden:
   - Ders listesinden dersi seçin
   - Alttaki arşiv listesinden ders tarihini seçin
   - Save butonuna basınca, ilgili arşiv video kaydının metne çevrilmiş dosyası (tape'si) oluşturulacak ve notepad ile açılacaktır.
-=============================================================================<br>
+<br>===========================================================================<br>
+![kaynak](Screenshots/Ayarlar-1.PNG)
+<br><br>
 **Ayarlar** açıklaması:<br>
 - Kaç dakika önce     : ders sayfası, ders saatinden kaç dakika önce açılsın. def=3
 - Debug (log tut)     : bir dosyaya (ve/veya konsola) debug bilgileri yazılsın def=hayır
@@ -51,13 +62,15 @@ Arşiv İzleme menüsünden:
 - Kaynak              : Liste (ders listesinden oku) Program (ders programından oku)
 - Dersi bir kez aç    : otomatik açılan sayfada problem olması halinde dakikada bir sayfayı tekrar aç def=açma
 - En geç kaç dk.      : dersi birden fazla açacaksa, ders saatinden en geç kaç dk. sonra tekrar açsın (timer kontrol dakika'da belirtilen dk.da bir açılacak) def=10
-
+<br><br>
+![kaynak](Screenshots/Ayarlar-2.PNG)
+<br><br>
 - Icerik okuma süresi : Otomatik ders içeriği okuma işleminde, her sayfa kaç saniye okunacak...
 - Otomatik başlat     : Icerik okuma penceresi açıldıktan sonra 10 sn içinde okumayı başlat, bitince kapat
 - Değerlendirme Sorularını hep oku : Minimum süre okunmuş olsa dahi Değerlendirme sorularını tekrar oku
 - Tüm içeriği tekrar oku           : Minimum süre okunmuş olsa dahi tüm sayfaları tekrar oku
 - FFMPEG.exe yolu     : ffmpeg kütüphanesini yükleyin ve exe yolunu burada gösterin.
-=============================================================================<br>
+<br>===========================================================================<br>
 Python içinden kullanabilmek için ilgili modülleri kurmalısınız. (pip install ...)
 exe'ye çevirmek için fbs modülünü indirip, aynı klasör yapısını oluşturun. Scriptlerden sanal ortamı activate.bat ile aktifleştirin.
 "fbs freeze" ile exe'ye çevirebilirsiniz.
