@@ -222,10 +222,10 @@ class dersIcerik(QDialog):
                 # print(f"baglanti={baglanti}")
                 durum = True
             else:
-                ders[0]='icerik <a> düzgün gelmedi...'
+                baglanti='icerik düzgün gelmedi...'
                 durum = False
         else:
-            ders[0]= 'yanit.json düzgün gelmedi...'
+            baglanti= 'yanit.json düzgün gelmedi...'
             durum = False
         if debug: print(f"dersIcerikLink: <a onClick=jQuery.openCourseContents({baglanti})")
         return durum, baglanti
@@ -257,7 +257,10 @@ class dersIcerik(QDialog):
                 arrayData = json.loads(jArray)
                 jArray = script[1][1:-2]
                 # if debug: print("dersIcerikOku: jArray=", jArray)
-                ogrStatus = json.loads(jArray)
+                if jArray=='null':
+                    ogrStatus = ''
+                else:
+                    ogrStatus = json.loads(jArray)
         if debug: print(f"dersIcerikOku: len={len(arrayData)} arrayData=", arrayData)
         if debug: print(f"dersIcerikOku: len={len(ogrStatus)} ogrStatus=", ogrStatus)
         veri = {'GMOD': 'Start'}
