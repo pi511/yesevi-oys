@@ -83,6 +83,7 @@ class dersArsiv(QDialog):
 
     def arsivListeDers(self, derskodu,sube, fark):
         arsiv = []
+        durum = False
         mydosya = self.ctx.anaKlasor + ARSIVKLASOR + f"\\{sube}.html"
         veri = {'METHOD': 'GOA', 'ID':derskodu, 'sg':''}
         if not os.path.isfile(mydosya) or fark > 1:

@@ -115,6 +115,10 @@ class AppContext(ApplicationContext):
             if self.ctx.TimedMessageBox('Ayarlar',f'Log dosyası {logfile} içeriği silinecek, emin misiniz?',QMessageBox.Yes | QMessageBox.No , timeout=10, defaultBtn=QMessageBox.No, noExec=True).exec_()==QMessageBox.Yes:
                 open(logfile,'w').close()
                 if debug: print(f"Ayarlar: {logfile} içeriği silindi.")
+            os.remove(anaKlasor + '\\oys-ders.html')
+            os.remove(anaKlasor + '\\oys-meetings.xml')
+            os.system(f"start {anaKlasor}")
+            self.ctx.TimedMessageBox('Ayarlar', 'alt klasördeki dosyaları silebilirsiniz.', QMessageBox.Ok, 5)
 
         def cancel(self):
             if debug: print(f"Ayarlar: iptal edildi")
@@ -830,7 +834,8 @@ class dersProgrami(QDialog):
             oturum = self.ctx.ayarOku('Login', 'oturum')
         soup = BeautifulSoup(sayfa, features='html.parser')
         if self.ctx.dpKaynak == 'Liste':
-            bulunandersler = soup.find_all('div', {'class': 'card hover make-it-slow card-items'})
+            liste = soup.find('div', {'class': 'col-md-12 tab-pane active','id':'contentHaftalikDers'})
+            bulunandersler = liste.find_all('div', {'class': 'card hover make-it-slow card-items'})
             i = 0
             for bulunanders in bulunandersler:
                 eleman = bulunanders.find('button', {'class': 'btn btn-outline-purple'})

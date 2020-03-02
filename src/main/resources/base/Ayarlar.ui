@@ -35,12 +35,12 @@
     <rect>
      <x>16</x>
      <y>256</y>
-     <width>75</width>
+     <width>100</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
-    <string>Log sıfırla</string>
+    <string>Log ve cache sıfırla</string>
    </property>
   </widget>
   <widget class="QTabWidget" name="tabWidget">

@@ -3,6 +3,8 @@ from PyQt5.QtCore import pyqtSlot, QTimer, QCoreApplication
 from bs4 import BeautifulSoup
 import os, sys
 from datetime import datetime, timedelta
+from docx import Document
+from docx.shared import Pt
 import re
 import json
 SUREMAX = 999999
@@ -39,6 +41,9 @@ class dersIcerik(QDialog):
         self.btn_Update = QPushButton('İçerik Durumlarını Güncelle', self)
         self.btn_Update.clicked.connect(self.btnUpdateClicked)
         self.buttonsLayout.addWidget(self.btn_Update)
+        self.btn_Kaydet = QPushButton('Seçilen Ders İçeriğini docx kaydet', self)
+        self.btn_Kaydet.clicked.connect(self.btnKaydetClicked)
+        self.buttonsLayout.addWidget(self.btn_Kaydet)
         self.btn_Baslat = QPushButton('Seçilen Ders İçin Otomatik İçerik Okumayı Başlat', self)
         self.btn_Baslat.clicked.connect(self.btnBaslatClicked)
         self.buttonsLayout.addWidget(self.btn_Baslat)
@@ -54,6 +59,13 @@ class dersIcerik(QDialog):
             secilen= self.tableWidget.selectedItems()[0].row()
             if debug: self.ctx.logYaz(f"BaslatClicked: Icerik okunacak ders={dersler[secilen]['Ders']}")
             self.dersIcerikOku(secilen)
+
+    def btnKaydetClicked(self):
+        if self.tableWidget.selectedItems()!=[]:
+            dersler=self.dersler
+            secilen= self.tableWidget.selectedItems()[0].row()
+            if debug: self.ctx.logYaz(f"BaslatClicked: Icerik kaydedilecek ders={dersler[secilen]['Ders']}")
+            self.dersIcerikOku(secilen, Kaydet=True)
 
     def dersTabloAl(self, guncelle=False):
         durum = False
@@ -230,9 +242,10 @@ class dersIcerik(QDialog):
         if debug: print(f"dersIcerikLink: <a onClick=jQuery.openCourseContents({baglanti})")
         return durum, baglanti
 
-    def dersIcerikOku(self, secilen):
+    def dersIcerikOku(self, secilen, Kaydet=False):
         if debug: print(f"dersIcerikOku: secilen ders[{secilen}]={self.dersler[secilen]}")
         self.ctx.TimedMessageBox('dersIcerikOku',f"Seçtiğiniz ders ({ self.dersler[secilen]['Ders'] })\nLütfen Bekleyiniz...",QMessageBox.Ok, 3)
+        self.ctx.IcerikDers = self.dersler[secilen]['Ders']
         mydosya=self.ctx.anaKlasor + f"{ICERIKKLASOR}\\oys-icerik-{self.dersler[secilen]['Ders'][:8]}.html"
         self.ctx.onlineOl()
         cerezler = self.ctx.cerezOku()
@@ -288,7 +301,7 @@ class dersIcerik(QDialog):
             sayfalar=[]
             ii = 0
             for d in dizin:
-                if d['sure'] <= (min+self.ctx.SureArtim) or (self.ctx.IcerikDS and d['ad'][:13]=='Değerlendirme') or self.ctx.IcerikTum:
+                if d['sure'] <= (min+self.ctx.SureArtim) or (self.ctx.IcerikDS and d['ad'][:13]=='Değerlendirme') or self.ctx.IcerikTum or Kaydet:
                     sayfalar.append({'ad': d['ad'] })
                     sayfalar[ii]['link'] = f"{self.ctx.adres}/index.php?Reque=dersIcerikView&dersManifest={d['ss']}&manifestKey={d['kk']}&DP={d['dp']}&ss={ss}"
                     ii += 1
@@ -296,7 +309,7 @@ class dersIcerik(QDialog):
             if debug: self.ctx.logYaz(f"Okuma süresi {min+self.ctx.SureArtim} saniyeden az olan {ii} sayfa {self.ctx.SureArtim} sn.kadar okunacak...")
             if ii>0:
                 self.ctx.cerezler = cerezler
-                b = self.IcerikOkuma(self.ctx, sayfalar)
+                b = self.IcerikOkuma(self.ctx, sayfalar, Kaydet)
                 durum, ders = self.dersIcerikDrm( self.dersler[secilen]['icerikno'] )
                 if durum:
                     self.dersler[secilen]['SonGiris'] = ders[1].strip()
@@ -337,18 +350,20 @@ class dersIcerik(QDialog):
         return ks, ss, dizin
 
     class IcerikOkuma(QDialog):
-        def __init__(self, ctx, sayfalar):
+        def __init__(self, ctx, sayfalar, Kaydet):
             super(QDialog, self).__init__()
             self.ctx = ctx
             self.title = 'İçerik Okuma'
             self.initUI()
             self.sayfalar = sayfalar
+            self.Kaydet = Kaydet
             self.sayfano = 0
             self.toplamsayfa = 0
             self.saniye = 0
             self.toplamsure = 0
             self.run = False
-            if self.ctx.IcerikOto: self.otomatikZamanla(10, self.otomatikBasla) # 10 saniye sonra otomatik başla
+            if Kaydet: self.otomatikZamanla(1, self.IcerikKaydet)
+            elif self.ctx.IcerikOto: self.otomatikZamanla(10, self.otomatikBasla) # 10 saniye sonra otomatik başla
             self.exec_()
 
         def initUI(self):
@@ -443,6 +458,20 @@ class dersIcerik(QDialog):
             self.saniye += 1
             self.toplamsure += 1
 
+        def IcerikKaydet(self):
+            klasor = f"{self.ctx.anaKlasor}{ICERIKKLASOR}"
+            self.Belge = Document()
+            self.Belge.add_heading(f"{self.ctx.IcerikDers} Ders İçeriği", 0)
+            self.btnBar.setEnabled(False)
+            self.timerX.stop()
+            for no in range( len(self.sayfalar)):
+                self.IcerikOku(no)
+                if no % 10 == 0:  QCoreApplication.processEvents()
+            dosya = f"{klasor}\\{self.ctx.IcerikDers[:8]}.docx"
+            self.Belge.save(dosya)
+            self.close()
+            os.system(f'"{dosya}"')
+
         def IcerikOku(self, no):
             sayfalar = self.sayfalar
             yanit = self.ctx.getSession().get( sayfalar[no]['link'] , cookies=self.ctx.cerezler)
@@ -450,7 +479,8 @@ class dersIcerik(QDialog):
             durum = yanit.status_code
             if durum==200:
                 sonuc = yanit.text
-                self.lblDersAd.setText(f"{sayfalar[no]['ad']} {no+1}/{len(sayfalar)}")
+                bolumadi = sayfalar[no]['ad']
+                self.lblDersAd.setText(f"{bolumadi} {no+1}/{len(sayfalar)}")
                 self.txtLink.setText( sayfalar[no]['link'] )
                 self.lblStatus.setText(f"Durum= HTTP<{durum}>")
                 self.txtDers.clear()
@@ -462,16 +492,56 @@ class dersIcerik(QDialog):
                     div = soup.find('div', {'id': 'iceriksayfa'})
                 if not div:
                     div = soup.find('div', {'id': 'icerik'})
+                if not div:
+                    div = soup.find('table', {'class': 'content'})
                 if div:
-                    self.txtDers.setPlainText(div.text)
-                else:
+                    metin = str(div.text)
+                    metin = metin.replace('\n', ' ')
+                    self.txtDers.setPlainText(metin)
+                    if self.Kaydet:
+                        self.Belge.add_heading( bolumadi, level=1 )
+                        paragraf = self.Belge.add_paragraph(metin)
+                        self.Paragraf = paragraf.add_run()
+                imgs = soup.find_all('img')
+                if imgs:
+                    self.txtDers.appendHtml(self.imgGetir(imgs))
+                if not div:
                     div = soup.find('div', {'id': 'guizno'})
                     if div:
                         self.txtDers.appendHtml( self.degerlendirmeSorulariGetir(soup, div.text) )
                     else:
-                        self.ctx.responseYaz(self.ctx.anaKlasor + f"{ICERIKKLASOR}\\oys-ds{no}.html", sonuc)
+                        self.ctx.responseYaz(self.ctx.anaKlasor + f"{ICERIKKLASOR}\\oys-{self.ctx.IcerikDers[5:8]}ds-{no}.html", sonuc)
                         self.txtDers.appendHtml(sonuc)
-                if debug: print(f"IcerikOku: ders={sayfalar[no]['ad']} status={durum} link={sayfalar[no]['link']}")
+                if debug: print(f"IcerikOku: ders={bolumadi} status={durum} link={sayfalar[no]['link']}")
+                return self.txtDers.toPlainText()
+
+        def imgGetir(self, imgs):
+            html = ''
+            for img in imgs:
+                kaynak = img['src']
+                dosyaadi = kaynak.split('/')[-1]
+                kaynak = self.ctx.adres + '/' + kaynak  #Viewer/temp/AYU/176/72/LRN//pics/2/bolum2.PNG
+                new_kaynak = self.resimIndir( kaynak, dosyaadi)
+                if debug: print(f"imgGetir img={img,img['src']} new_kaynak={new_kaynak}")
+                new_img= img.text.replace(kaynak,new_kaynak)
+                html += new_img
+                if self.Kaydet:
+                    en = int(img.get('width', '200')) / 2
+                    boy = int(img.get('height', '150')) / 2
+                    if debug: print(f"imgGetir en={en} boy={boy}")
+                    self.Paragraf.add_picture(new_kaynak , width= Pt(en), height= Pt(boy) )
+            return html
+
+        def resimIndir(self, kaynak, dosyaadi):
+            klasor = f"{self.ctx.anaKlasor}{ICERIKKLASOR}\\img"
+            os.makedirs(klasor, exist_ok=True)
+            new_kaynak = f"{klasor}\\{dosyaadi}"
+            #print("new_kaynak=",new_kaynak)
+            yanit = self.ctx.getSession().get( kaynak , cookies=self.ctx.cerezler, stream=True)
+            with open(new_kaynak, 'wb') as dosya:
+                for chunk in yanit.iter_content(chunk_size=512):
+                    dosya.write(chunk)
+            return new_kaynak
 
         def degerlendirmeSorulariGetir(self, soup, quizname):
             sorular=[]
