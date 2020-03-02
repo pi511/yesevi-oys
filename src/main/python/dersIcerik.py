@@ -258,22 +258,35 @@ class dersIcerik(QDialog):
             with open(mydosya, 'r', encoding="utf-8") as dosya:
                 sayfa = dosya.read()
                 dosya.close()
-        soup = BeautifulSoup(sayfa, features='html.parser')
+        soup = BeautifulSoup(sayfa, features='html.parser' )
         scripts = soup.find_all('script')
         for script in scripts:
-            # if debug: print(f"dersIcerikOku: script={script}")
-            script=script.text
+            script = script.text
+            if debug: print(f"dersIcerikOku: script={script}")
             if 'var arrayData' in script:
-                script =  re.findall('=(.*?;)', script)
+                #script =  re.findall(r'=(.*?;)', script )
+                script =  re.findall(r"=((?:\[.*\])?.*?;)", script )
+                if debug: print(f"dersIcerikOku: script[0]={script[0]}")
                 jArray = script[0][:-1]
-                # if debug: print ("dersIcerikOku: jArray=",jArray)
-                arrayData = json.loads(jArray)
+                if debug: print ("dersIcerikOku: jArray1=",jArray)
+                try:
+                    arrayData = json.loads(jArray)
+                except:
+                    self.ctx.TimedMessageBox('dersIcerikOku',"Hata: İçerik beklenildiği gibi değil",
+                                             QMessageBox.Ok, 2)
+                    arrayData = []
+                if debug: print(f"dersIcerikOku: script[1]={script[1]}")
                 jArray = script[1][1:-2]
-                # if debug: print("dersIcerikOku: jArray=", jArray)
+                if debug: print("dersIcerikOku: jArray2=", jArray)
                 if jArray=='null':
-                    ogrStatus = ''
+                    ogrStatus = []
                 else:
-                    ogrStatus = json.loads(jArray)
+                    try:
+                        ogrStatus = json.loads(jArray)
+                    except:
+                        self.ctx.TimedMessageBox('dersIcerikOku', "Hata: İçerik beklenildiği gibi değil",
+                                                 QMessageBox.Ok, 2)
+                        ogrStatus = []
         if debug: print(f"dersIcerikOku: len={len(arrayData)} arrayData=", arrayData)
         if debug: print(f"dersIcerikOku: len={len(ogrStatus)} ogrStatus=", ogrStatus)
         veri = {'GMOD': 'Start'}
@@ -484,6 +497,8 @@ class dersIcerik(QDialog):
                 self.txtLink.setText( sayfalar[no]['link'] )
                 self.lblStatus.setText(f"Durum= HTTP<{durum}>")
                 self.txtDers.clear()
+                if self.Kaydet:
+                    self.Belge.add_heading(bolumadi, level=1)
                 soup = BeautifulSoup(sonuc, features='html.parser')
                 # div = soup.find('div', {'id': 'sound'})
                 # div = soup.select('div#iceriksayfa,div.icerik_sayfasi') # iki attribute'dan birini aramak için
@@ -499,7 +514,6 @@ class dersIcerik(QDialog):
                     metin = metin.replace('\n', ' ')
                     self.txtDers.setPlainText(metin)
                     if self.Kaydet:
-                        self.Belge.add_heading( bolumadi, level=1 )
                         paragraf = self.Belge.add_paragraph(metin)
                         self.Paragraf = paragraf.add_run()
                 imgs = soup.find_all('img')
@@ -508,10 +522,16 @@ class dersIcerik(QDialog):
                 if not div:
                     div = soup.find('div', {'id': 'guizno'})
                     if div:
-                        self.txtDers.appendHtml( self.degerlendirmeSorulariGetir(soup, div.text) )
+                        html, metin = self.degerlendirmeSorulariGetir(soup, div.text)
+                        self.txtDers.appendHtml( html )
+                        if self.Kaydet: self.Belge.add_paragraph( metin )
                     else:
-                        self.ctx.responseYaz(self.ctx.anaKlasor + f"{ICERIKKLASOR}\\oys-{self.ctx.IcerikDers[5:8]}ds-{no}.html", sonuc)
+                        self.ctx.responseYaz(self.ctx.anaKlasor + f"{ICERIKKLASOR}\\oys-{self.ctx.IcerikDers[5:8]}no-{no}.html", sonuc)
+                        div = soup.find('table')
+                        if div:
+                            sonuc = div.text
                         self.txtDers.appendHtml(sonuc)
+                        if self.Kaydet: self.Belge.add_paragraph( '<HTML OKUNAMADI (flash vs olabilir)>' )
                 if debug: print(f"IcerikOku: ders={bolumadi} status={durum} link={sayfalar[no]['link']}")
                 return self.txtDers.toPlainText()
 
@@ -529,7 +549,10 @@ class dersIcerik(QDialog):
                     en = int(img.get('width', '200')) / 2
                     boy = int(img.get('height', '150')) / 2
                     if debug: print(f"imgGetir en={en} boy={boy}")
-                    self.Paragraf.add_picture(new_kaynak , width= Pt(en), height= Pt(boy) )
+                    try:
+                        self.Paragraf.add_picture(new_kaynak , width= Pt(en), height= Pt(boy) )
+                    except:
+                        self.Paragraf.add_run('<IMG hatalı>')
             return html
 
         def resimIndir(self, kaynak, dosyaadi):
@@ -575,20 +598,25 @@ class dersIcerik(QDialog):
                 sorular[i]['cevap'] = soru['ans']
                 i+=1
             html = ''
+            metin = ''
             i = 0
             for soru in sorular:
                 html += f"<b>Soru {i+1} : </b>" + soru['soru'] + '<br><ul>'
+                metin += f"Soru {i+1} : " + soru['soru'] + '\n'
                 # if debug: print(f"degerlendirmeSorulariGetir: siklar=", soru['siklar'])
                 for opt, deger in soru['siklar'].items():
                     # if debug: print (f"degerlendirmeSorulariGetir: opt=", opt,"deger=",deger)
                     if opt==soru['cevap']:
                         html += '<li><b>' + opt + ')' + deger + '</b></li>'
+                        metin += '\n(' + opt + ') ' + deger
                     else:
                         html += '<li>' + opt + ')' + deger + '</li>'
+                        metin +=  '\n ' + opt + ') ' + deger
                 html += '</ul><br><br>'
+                metin += '\n\n'
                 i += 1
                 # html += soru['cevap']
-            return html
+            return html, metin
 
 if __name__ == '__main__':
     print('main.py çalıştır')
