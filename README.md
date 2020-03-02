@@ -31,6 +31,7 @@ ScoGezgini menüsünden:
 <br><br>
 Ders İçerikleri menüsünden:
   - Ders içerikleri okuma durumunuzu görebilirsiniz.
+  - Ders içeriklerini docx olarak kaydedebilirsiniz.
   - Bilgiler ilk okumada veritabanına kayıt edilir. 
   - Güncel durum için 'İçerik Durumlarını Güncelle' butonunu kullanabilirsiniz.
   - Tablodan bir ders seçip sağ alttaki ...Başlat butonuna basın.
@@ -80,6 +81,4 @@ exe'ye çevirmek için fbs modülünü indirip, aynı klasör yapısını oluşt
 Veya <a href=https://1drv.ms/u/s!AnY5SpLroMRqlZQDVdwOXJoE7Oy0DQ> kurulum paketi</a> ile windowsa kurup kullanabilirsiniz. (windows 10 ve 2012'da denendi)
 
 
-NOT: selenium driver kullanmadığım için, çerezleri varsayılan tarayıcıya aktarmıyor şimdilik. O yüzden varsayılan tarayıcıda oys'de oturum açın, oturum kapanmasın diye arşivden bir ders izleyin. Böylece otomatik izleme sağlıklı çalışacaktır.
-
-webbrowser yerine selenium uygulamayı düşünüyorum ama uygulamaya yeni modüller dahil etmek istemediğim için erteliyorum.
+NOT: Bu açık kaynak bir projedir. Sitede zaman içinde meydana gelen değişiklikler nedeniyle çalışmayan ekranlar olursa, kendiniz değiştirip düzeltebilirsiniz. Benim öğrenciliğim bittiği için sisteme erişemiyorum, zaman ayıramaıyorum, dolayısı ile düzeltme yapmam söz konusu değil. Lütfen kodu çekip öğreniniz.
