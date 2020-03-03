@@ -488,7 +488,7 @@ class dersIcerik(QDialog):
         def IcerikOku(self, no):
             sayfalar = self.sayfalar
             yanit = self.ctx.getSession().get( sayfalar[no]['link'] , cookies=self.ctx.cerezler)
-            yanit.encoding = 'UTF-8'
+            yanit.encoding = 'utf-8'
             durum = yanit.status_code
             if durum==200:
                 sonuc = yanit.text
@@ -498,7 +498,8 @@ class dersIcerik(QDialog):
                 self.lblStatus.setText(f"Durum= HTTP<{durum}>")
                 self.txtDers.clear()
                 if self.Kaydet:
-                    self.Belge.add_heading(bolumadi, level=1)
+                    paragraf = self.Belge.add_heading(bolumadi, level=1)
+                    self.Paragraf = paragraf.add_run()
                 soup = BeautifulSoup(sonuc, features='html.parser')
                 # div = soup.find('div', {'id': 'sound'})
                 # div = soup.select('div#iceriksayfa,div.icerik_sayfasi') # iki attribute'dan birini aramak için
@@ -512,6 +513,7 @@ class dersIcerik(QDialog):
                 if div:
                     metin = str(div.text)
                     metin = metin.replace('\n', ' ')
+                    metin = metin.replace('\0', ' ')
                     self.txtDers.setPlainText(metin)
                     if self.Kaydet:
                         paragraf = self.Belge.add_paragraph(metin)
@@ -546,8 +548,8 @@ class dersIcerik(QDialog):
                 new_img= img.text.replace(kaynak,new_kaynak)
                 html += new_img
                 if self.Kaydet:
-                    en = int(img.get('width', '200')) / 2
-                    boy = int(img.get('height', '150')) / 2
+                    en = int(img.get('width', '200')) - 20
+                    boy = int(img.get('height', '150')) #- 10
                     if debug: print(f"imgGetir en={en} boy={boy}")
                     try:
                         self.Paragraf.add_picture(new_kaynak , width= Pt(en), height= Pt(boy) )
