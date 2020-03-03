@@ -2,5 +2,6 @@
     "app_name": "oys-yesevi",
     "author": "pi511",
     "main_module": "src/main/python/main.py",
-    "version": "1.4.4"
+    "version": "1.4.4",
+    "hidden_imports": ["docx"]
 }

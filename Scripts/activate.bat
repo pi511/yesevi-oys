@@ -1,4 +1,4 @@
-@echo off
+@echo offrem no module named....hatasi varsa, d:\python36-37\python.exe -m pip install "module" ile kur
 set "VIRTUAL_ENV=D:\pi\work\python\yesevi-oys"
 
 if not defined PROMPT (

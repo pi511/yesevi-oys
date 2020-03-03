@@ -984,9 +984,11 @@ if __name__ == '__main__':
 
 
 #INFO: http://sanal.yesevi.edu.tr/api/xml?action=common-info   breezesession almanın tavsiye edilen yolu, getCommonInfo
+#INFO FBS komutlarını doğrudan fbs ile değil python -m fbs ile çalıştırın
 #TODO açılan pencereye process listten bakıp, dersten 90 dakika sonra hala açık olan connect penceresini kapatma
 #TODO yeni ödev ve ödev notu bildirimi (gereksiz)
 #TODO dilekçe cevaplandı bildirimi (gereksiz)
 #TODO mesajları progarm içinden okuma (gereksiz)
 #TODO Dosyalara yeni dosya eklendi bildirimi, tüm dosyaları indirme (gereksiz)
 #TODO sınav notlarını bir pencerede göserme (gereksiz)
+#INFO D:\pi\work\python\yesevi-oys\Lib\site-packages\docx klasörünü D:\pi\work\python\yesevi-oys\target\oys-yesevi içine kopyala...
