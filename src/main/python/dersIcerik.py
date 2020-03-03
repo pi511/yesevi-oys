@@ -535,10 +535,10 @@ class dersIcerik(QDialog):
                 if debug: print(f"IcerikOku: ders={bolumadi} status={durum} link={sayfalar[no]['link']}")
                 return self.txtDers.toPlainText()
 
-        def imgGetir(self, imgs):
+        def imgGetir(self, imgs, baseurl=''):
             html = ''
             for img in imgs:
-                kaynak = img['src']
+                kaynak = baseurl + img['src']
                 dosyaadi = kaynak.split('/')[-1]
                 kaynak = self.ctx.adres + '/' + kaynak  #Viewer/temp/AYU/176/72/LRN//pics/2/bolum2.PNG
                 new_kaynak = self.resimIndir( kaynak, dosyaadi)
@@ -552,7 +552,7 @@ class dersIcerik(QDialog):
                     try:
                         self.Paragraf.add_picture(new_kaynak , width= Pt(en), height= Pt(boy) )
                     except:
-                        self.Paragraf.add_run('<IMG hatalı>')
+                        self.Paragraf.add_text('<IMG hatalı>')
             return html
 
         def resimIndir(self, kaynak, dosyaadi):
@@ -578,8 +578,9 @@ class dersIcerik(QDialog):
                         kaynak = ''
                     else:
                         kaynak = kaynak[0]
+            baseurl = '/' + kaynak[:-9]
             kaynak = self.ctx.adres + '/' + kaynak + quizname #Viewer/temp/AYU/700/912/LRN//sorular/quiz1.txt
-            # if debug: print (f"degerlendirmeSorulariGetir: kaynak={kaynak}")
+            if debug: print (f"degerlendirmeSorulariGetir: baseurl={baseurl} kaynak={kaynak}")
             yanit = self.ctx.getSession().get(kaynak, cookies=self.ctx.cerezler)
             # if debug: print(f"degerlendirmeSorulariGetir:", yanit.encoding)
             yanit.encoding = 'utf-8'
@@ -587,12 +588,19 @@ class dersIcerik(QDialog):
             try:
                 sonuc = yanit.json()
             except: #json.decoder.JSONDecodeError
-                # if debug: print("yanit=", yanit, "kaynak", kaynak, yanit.status_code, f"text=\n", yanit.text)
+                if debug: print(f"degerlendirmeSorulariGetir: yanit={yanit} kaynak={kaynak} status={yanit.status_code} text=\n{yanit.text}")
                 return yanit.text
-            # if debug: print("degerlendirmeSorulariGetir: sonuc=", sonuc)
+            if debug: print("degerlendirmeSorulariGetir: sonuc=", sonuc)
             quiz = sonuc['quiz']
             i = 0
             for soru in quiz:
+                if soru['question'].find("img")>0:
+                    imgs = []
+                    soruimg = BeautifulSoup(soru['question'],features='html.parser').find('img')
+                    if debug: print(f"degerlendirmeSorulariGetir: soruimg={soruimg}")
+                    if soruimg:
+                        imgs.append(soruimg)
+                        self.imgGetir(imgs, baseurl )
                 sorular.append({'soru': soru['question']})
                 sorular[i]['siklar'] = soru['option']
                 sorular[i]['cevap'] = soru['ans']
@@ -606,6 +614,13 @@ class dersIcerik(QDialog):
                 # if debug: print(f"degerlendirmeSorulariGetir: siklar=", soru['siklar'])
                 for opt, deger in soru['siklar'].items():
                     # if debug: print (f"degerlendirmeSorulariGetir: opt=", opt,"deger=",deger)
+                    if deger.find("img") > 0:
+                        imgs = []
+                        soruimg = BeautifulSoup(deger, features='html.parser').find('img')
+                        if debug: print(f"degerlendirmeSorulariGetir: şık.soruimg={soruimg}")
+                        if soruimg:
+                            imgs.append(soruimg)
+                            self.imgGetir(imgs, baseurl )
                     if opt==soru['cevap']:
                         html += '<li><b>' + opt + ')' + deger + '</b></li>'
                         metin += '\n(' + opt + ') ' + deger
