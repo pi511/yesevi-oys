@@ -545,6 +545,63 @@
      </property>
     </widget>
    </widget>
+   <widget class="QWidget" name="tab">
+    <attribute name="title">
+     <string>Network</string>
+    </attribute>
+    <widget class="QLabel" name="label_15">
+     <property name="geometry">
+      <rect>
+       <x>15</x>
+       <y>16</y>
+       <width>85</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Sanal sunucu    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtSanalSrv">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>14</y>
+       <width>300</width>
+       <height>20</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_16">
+     <property name="geometry">
+      <rect>
+       <x>15</x>
+       <y>50</y>
+       <width>85</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>LMS sunucu    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtLmsSrv">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>48</y>
+       <width>300</width>
+       <height>20</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
   </widget>
   <widget class="QPushButton" name="btnKulSif">
    <property name="geometry">

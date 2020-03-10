@@ -103,7 +103,7 @@ class dersArsiv(QDialog):
             # print("ba=",bytearray(sonuc['Deger'],'utf-8'))
             self.ctx.responseYaz(mydosya, sonuc)
             soup = BeautifulSoup(sonuc, features='html.parser')
-            buttonlar = soup.find_all('tr',{'style':'height:25px;'}) #"openMeeting('http://sanal.yesevi.edu.tr/p3v02p30wpso/');"
+            buttonlar = soup.find_all('tr',{'style':'height:25px;'}) #"openMeeting(f'http://{self.ctx.SanalSrv}/p3v02p30wpso/');"
             for satir in buttonlar:
                 eleman = satir.find('span',{'class':'hidden-xs'})
                 if eleman:

@@ -91,6 +91,10 @@ class AppContext(ApplicationContext):
             self.cbxIcerikTum.setChecked(True if self.ctx.IcerikTum else False)
             self.FFMpeg=self.ctx.FFMpeg
             self.txtFFMpeg.setText(self.FFMpeg)
+            #üçüncü tab
+            self.txtSanalSrv.setText(self.ctx.SanalSrv)
+            self.txtLmsSrv.setText(self.ctx.LmsSrv)
+            #butonlar
             self.btnFFMpeg.clicked.connect(self.dosyaFFMpeg)
             self.buttonBox.accepted.connect(self.applyAll)
             self.buttonBox.rejected.connect(self.cancel)
@@ -157,6 +161,10 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('IcerikOkuma', 'TumunuOku', 'Evet' if self.ctx.IcerikTum else 'Hayir')
             self.ctx.FFMpeg = self.FFMpeg
             self.ctx.ayarYaz('Ayar', 'FFMpeg',self.ctx.FFMpeg)
+            self.ctx.SanalSrv = self.txtSanalSrv.text()
+            self.ctx.ayarYaz('Ayar', 'SanalSrv', self.ctx.SanalSrv)
+            self.ctx.LmsSrv = self.txtLmsSrv.text()
+            self.ctx.ayarYaz('Ayar', 'LmsSrv', self.ctx.LmsSrv)
 
     def ayarlariAc(self):
         self.ctx.Ayarlar(self.ctx)
@@ -210,6 +218,12 @@ class AppContext(ApplicationContext):
         ayarDeger = self.ctx.ayarOku('Ayar', 'FFMpeg')
         if ayarDeger is None: ayarDeger='D:\\pi\\util\\ffmpeg\\ffmpeg.exe'
         self.ctx.FFMpeg = ayarDeger
+        ayarDeger = self.ctx.ayarOku('Ayar', 'SanalSrv')
+        if ayarDeger is None: ayarDeger='sanal.yesevi.edu.tr'
+        self.ctx.SanalSrv = ayarDeger
+        ayarDeger = self.ctx.ayarOku('Ayar', 'LmsSrv')
+        if ayarDeger is None: ayarDeger='lms.yesevi.edu.tr'
+        self.ctx.LmsSrv = ayarDeger
         self.ctx.Mesaj = self.ctx.ayarOku('Login','Mesaj') #gelen mesaj sayısı, en son
 
 #AYAR-LOG-ÇEREZ-RESPONSE DOSYA İŞLEMLERİ
@@ -564,9 +578,9 @@ class AppContext(ApplicationContext):
         cerezler = self.ctx.cerezOku()
         cerezler['BREEZESESSION'] = oturum
         if session is None:
-            yanit = requests.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+            yanit = requests.get(f'http://{self.ctx.SanalSrv}/api/xml?action=common-info', cookies=cerezler)
         else:
-            yanit = session.get('http://sanal.yesevi.edu.tr/api/xml?action=common-info', cookies=cerezler)
+            yanit = session.get(f'http://{self.ctx.SanalSrv}/api/xml?action=common-info', cookies=cerezler)
         yenicerez= yanit.cookies
         yanit.encoding = 'UTF-8'
         yenicerez['BREEZESESSION'] = oturum
@@ -943,7 +957,7 @@ class dersProgrami(QDialog):
         if son != simdiki or (son == simdiki and not self.ctx.tekraracma):
             oturum = self.ders_programi_getir()
             dersurl = dersler[i]['link'] + '?session=' + oturum + '&proto=true'
-            #webbrowser.open('http://sanal.yesevi.edu.tr/login?session=' + oturum)
+            #webbrowser.open(f'http://{self.ctx.SanalSrv}/login?session=' + oturum)
             webbrowser.open(dersurl)
             user_id, login, name, yenicerez = self.ctx.getCommonInfo(oturum)
             #flvView(self.ctx,dersler[i]['link'] + '?session=' + oturum + '&proto=true')

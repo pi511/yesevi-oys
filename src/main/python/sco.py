@@ -12,7 +12,6 @@ import urllib.parse
 #from PyQt5.QtWebEngineWidgets import QWebEngineView
 #from PyQt5.QtNetwork import QNetworkCookieJar
 
-adres = 'http://sanal.yesevi.edu.tr'
 debug = False
 DERSSURESI = -90 #seçilen günkü dersler işlendikten sonra geçmesi gerek süre
 SCOKLASOR = '\\sco'
@@ -44,7 +43,7 @@ class scoGezgini(QDialog):
         mydosya=self.ctx.anaKlasor + '\\oys-meetings.xml'
         if not os.path.isfile(mydosya) or poturum!='':
             if not self.ctx.onlineOldu: self.ctx.onlineOl()
-            url=adres + '/api/xml?action=report-my-meetings'+poturum
+            url=f'http://{self.ctx.SanalSrv}/api/xml?action=report-my-meetings'+poturum
             yanit = self.ctx.session.get(url)
             yanit.encoding = 'UTF-8'
             if debug: print(f"getMyMeetings: adres={url}")
@@ -118,7 +117,7 @@ class scoGezgini(QDialog):
         scodosya=self.ctx.anaKlasor + f'{SCOKLASOR}\\oys-scoexp{scoId}.xml'
         if not os.path.isfile(scodosya) or poturum!='':
             if not self.ctx.onlineOldu: self.ctx.onlineOl()
-            url= adres + '/api/xml?action=sco-expanded-contents&sco-id=' + scoId + poturum
+            url= f'http://{self.ctx.SanalSrv}/api/xml?action=sco-expanded-contents&sco-id=' + scoId + poturum
             if oturum is None:
                 yanit = self.ctx.session.get(url)
                 yanit.encoding = 'UTF-8'
@@ -190,7 +189,7 @@ class scoGezgini(QDialog):
 
     def setHeaders(self):
         header={'Connection': 'keep-alive',
-                'Host': 'sanal.yesevi.edu.tr',
+                'Host': f'{self.ctx.SanalSrv}',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                 'Accept-Language': 'tr,en-US;q=0.7,en;q=0.3',
@@ -218,7 +217,7 @@ class scoGezgini(QDialog):
         options |= QFileDialog.ReadOnly
         self.ctx.onlineOl()
         dosyaadi = self.dosyalar[d]['dosyaadi']
-        url = f"{adres}{self.dosyalar[d]['url']}source/{urllib.request.pathname2url(dosyaadi)}" + '?session=' + self.ctx.oturum
+        url = f"http://{self.ctx.SanalSrv}{self.dosyalar[d]['url']}source/{urllib.request.pathname2url(dosyaadi)}" + '?session=' + self.ctx.oturum
         yanit= self.ctx.session.get(url, headers=self.setHeaders())
         yanit.encoding = 'UTF-8'
         durum = yanit.status_code
@@ -238,7 +237,7 @@ class scoGezgini(QDialog):
         if debug: print(f"dosyaGetir: durum={durum} dosyaadi={dosyaadi} url={url} sonuc={sonuc}")
         if durum != 200 or sonuc=='Bulunamadı':
             dosyaadi = f"{self.dosyalar[d]['scoid']}.zip"
-            url = f"{adres}{self.dosyalar[d]['url']}output/{dosyaadi}?download=zip" + '&session=' + self.ctx.oturum
+            url = f"http://{self.ctx.SanalSrv}{self.dosyalar[d]['url']}output/{dosyaadi}?download=zip" + '&session=' + self.ctx.oturum
             yanit = self.ctx.session.get(url, cookies=self.ctx.cerezler, stream= True)
             yanit.encoding = 'UTF-8'
             durum = yanit.status_code
