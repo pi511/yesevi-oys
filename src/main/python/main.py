@@ -28,7 +28,7 @@ Config = configparser.ConfigParser()
 adres = 'https://oys.yesevi.edu.tr'
 dersler = []
 ilkders = -1
-ONLINESURE = 10
+ONLINESURE = 3
 
 
 class AppContext(ApplicationContext):
@@ -91,6 +91,8 @@ class AppContext(ApplicationContext):
             self.cbxIcerikTum.setChecked(True if self.ctx.IcerikTum else False)
             self.FFMpeg=self.ctx.FFMpeg
             self.txtFFMpeg.setText(self.FFMpeg)
+            self.cbxZipSilme.setChecked(True if self.ctx.ZipSilme else False)
+            self.cbxFlvSilme.setChecked(True if self.ctx.FlvSilme else False)
             #üçüncü tab
             self.txtSanalSrv.setText(self.ctx.SanalSrv)
             self.txtLmsSrv.setText(self.ctx.LmsSrv)
@@ -161,6 +163,10 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('IcerikOkuma', 'TumunuOku', 'Evet' if self.ctx.IcerikTum else 'Hayir')
             self.ctx.FFMpeg = self.FFMpeg
             self.ctx.ayarYaz('Ayar', 'FFMpeg',self.ctx.FFMpeg)
+            self.ctx.ZipSilme = self.cbxZipSilme.isChecked()
+            self.ctx.ayarYaz('IcerikOkuma', 'ZipSilme', 'Evet' if self.ctx.ZipSilme else 'Hayir')
+            self.ctx.FlvSilme = self.cbxFlvSilme.isChecked()
+            self.ctx.ayarYaz('IcerikOkuma', 'FlvSilme', 'Evet' if self.ctx.FlvSilme else 'Hayir')
             self.ctx.SanalSrv = self.txtSanalSrv.text()
             self.ctx.ayarYaz('Ayar', 'SanalSrv', self.ctx.SanalSrv)
             self.ctx.LmsSrv = self.txtLmsSrv.text()
@@ -218,6 +224,8 @@ class AppContext(ApplicationContext):
         ayarDeger = self.ctx.ayarOku('Ayar', 'FFMpeg')
         if ayarDeger is None: ayarDeger='D:\\pi\\util\\ffmpeg\\ffmpeg.exe'
         self.ctx.FFMpeg = ayarDeger
+        self.ctx.ZipSilme = True if self.ctx.ayarOku('IcerikOkuma', 'ZipSilme') == 'Evet' else False
+        self.ctx.FlvSilme = True if self.ctx.ayarOku('IcerikOkuma', 'FlvSilme') == 'Evet' else False
         ayarDeger = self.ctx.ayarOku('Ayar', 'SanalSrv')
         if ayarDeger is None: ayarDeger='sanal.yesevi.edu.tr'
         self.ctx.SanalSrv = ayarDeger
@@ -597,6 +605,7 @@ class AppContext(ApplicationContext):
             user_id = user['user-id']
         else:
             user_id = None
+        if debug: print(f"getCommonInfo: user_id={user_id} login={login} name={name}")
         return user_id, login, name, yenicerez
 
     def oturumGetir(self, cerezler, mesajGetir=True):

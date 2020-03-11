@@ -73,6 +73,7 @@ class dersArsiv(QDialog):
                 dersler[i]['Sube'] = dersSube
                 dersler[i]['Kod'] = derskodu
                 if debug: print(f"arsivListeGetir: {i} {dersler[i]}")
+                durum = True
                 i += 1
         except e:
             if debug: print(f"arsivListeGetir: Hata var",  sys.exc_info()[0] )
@@ -86,12 +87,12 @@ class dersArsiv(QDialog):
         durum = False
         mydosya = self.ctx.anaKlasor + ARSIVKLASOR + f"\\{sube}.html"
         veri = {'METHOD': 'GOA', 'ID':derskodu, 'sg':''}
-        if not os.path.isfile(mydosya) or fark > 1:
-            if not self.ctx.online:
-                self.ctx.onlineOl()
+        if not os.path.isfile(mydosya) or fark > 1 or self.ctx.online:
+            self.ctx.onlineOl()
             cerezler=self.ctx.cerezOku()
             yanit = self.ctx.getSession().post(self.ctx.adres + '/ders_islemleri_ekran', data=veri, cookies=cerezler)
             yanit.encoding = 'UTF-8'
+            if debug: print(f"arsivListeDers: fark={fark} mydosya={mydosya} veri={veri} yanit={yanit}")
             sonuc = yanit.json()
             basarili = sonuc['Basarili']
             if basarili: sonuc = base64.b64decode(bytearray(sonuc['Deger'],'utf-8')).decode('utf-8')
@@ -99,7 +100,7 @@ class dersArsiv(QDialog):
             sonuc = self.ctx.responseOku(mydosya)
             basarili = True
         if basarili:
-            # print("sonuc=",sonuc)
+            # if debug: print("arsivListeDers: sonuc=",sonuc)
             # print("ba=",bytearray(sonuc['Deger'],'utf-8'))
             self.ctx.responseYaz(mydosya, sonuc)
             soup = BeautifulSoup(sonuc, features='html.parser')
@@ -116,7 +117,7 @@ class dersArsiv(QDialog):
                     if debug: print(f"arsivListeDers: tarih={tarih} eleman={eleman}")
                     arsiv.append({'link':baglanti,'tarih':tarih})
                 else:
-                    if debug: print(f"arsivListeDers: icerik <button> düzgün gelmedi...")
+                    if debug: print(f"arsivListeDers: icerik <button> düzgün gelmedi...{tarih}de arşiv yok mu?")
                     durum = False
         else:
             if debug: print(f"arsivListeDers: yanit.json düzgün gelmedi...")
@@ -158,6 +159,11 @@ class dersArsiv(QDialog):
             z = zipfile.ZipFile(io.BytesIO(yanit.content))
             if debug: print(f"arsivIsle: ziptekiler=",z.namelist())
             # z.extractall(klasor)
+            if self.ctx.ZipSilme:
+                fileName = klasor + '\\' + dosyaadi + '.zip'
+                with open(fileName, 'wb') as dosya:
+                    for chunk in yanit.iter_content(chunk_size=512):
+                        dosya.write(chunk)
             z.extract(flvdosya,klasor)
         else:
             self.txtDurum.append('*** Dosya yüklenemedi!')
@@ -176,7 +182,11 @@ class dersArsiv(QDialog):
         subprocess.Popen(['notepad',dosyaadi+'.txt'])
         # os.system(f"notepad {dosyaadi}.txt")
         time.sleep(5)
-        os.remove(inputF)
+        if self.ctx.FlvSilme:
+            self.txtDurum.append(f"*** {inputF} silinmedi.")
+        else:
+            self.txtDurum.append(f"*** {inputF} silindi.")
+            os.remove(inputF)
         os.remove(outputW)
         self.close()
 
