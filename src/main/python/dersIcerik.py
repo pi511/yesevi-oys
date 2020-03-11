@@ -261,12 +261,22 @@ class dersIcerik(QDialog):
         soup = BeautifulSoup(sayfa, features='html.parser' )
         scripts = soup.find_all('script')
         for script in scripts:
-            script = script.text
-            if debug: print(f"dersIcerikOku: script={script}")
-            if 'var arrayData' in script:
-                #script =  re.findall(r'=(.*?;)', script )
-                script =  re.findall(r"=((?:\[.*\])?.*?;)", script )
-                if debug: print(f"dersIcerikOku: script[0]={script[0]}")
+            script2 = script.text
+            script2 = script2.replace('lt;','<')
+            script2 = script2.replace('gt;','>')
+            v1 = 0
+            v2 = script2.find('; var')
+            while (v1 != -1):
+                v1 = script2.find(';')
+                if v1 != v2 :
+                    script2 = script2[:v1] + ':' + script2[v1 + 1:]
+                else:
+                    v1 = -1
+            if debug: print(f"dersIcerikOku: script={script2}")
+            if 'var arrayData' in script2:
+                script =  re.findall(r"=(.*?;)", script2 )
+                if len(script)<2: script =  re.findall(r"=((?:\[.*\])?.*?;)", script2 )
+                if debug: print(f"dersIcerikOku: len={len(script)} script[0]={script[0]}")
                 jArray = script[0][:-1]
                 if debug: print ("dersIcerikOku: jArray1=",jArray)
                 try:
