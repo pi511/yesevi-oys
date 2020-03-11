@@ -73,6 +73,8 @@ Arşiv İzleme menüsünden:
 - Değerlendirme Sorularını hep oku : Minimum süre okunmuş olsa dahi Değerlendirme sorularını tekrar oku
 - Tüm içeriği tekrar oku           : Minimum süre okunmuş olsa dahi tüm sayfaları tekrar oku
 - FFMPEG.exe yolu     : ffmpeg kütüphanesini yükleyin ve exe yolunu burada gösterin.
+- Zip'i silme         : ara dosya olarak indirilen ders videosunu zip olarak kaydet
+- FLV'i silme         : metne çevrilecek hocanın videosunu (kamera görüntüsü) silme
 <br>===========================================================================<br>
 Python içinden kullanabilmek için ilgili modülleri kurmalısınız. (pip install ...)
 exe'ye çevirmek için fbs modülünü indirip, aynı klasör yapısını oluşturun. Scriptlerden sanal ortamı activate.bat ile aktifleştirin.
