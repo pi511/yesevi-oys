@@ -580,6 +580,7 @@ class AppContext(ApplicationContext):
         if debug: print(f"onlineOl: user_id={user_id} name={name} login={login} oturum={self.oturum} cerezler={self.ctx.cerezler}")
         self.onlinesaat= datetime.now()
         self.ctx.onlineOldu= True
+        self.ctx.oturum = self.oturum
         return self.oturum
 
     def getCommonInfo(self, oturum, session=None):
