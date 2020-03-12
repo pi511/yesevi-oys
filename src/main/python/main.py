@@ -69,8 +69,7 @@ class AppContext(ApplicationContext):
             self.dersDakika = self.ctx.dersDakika
             self.spnDakika.setValue(self.ctx.dersDakika)
             self.cbxDebug.setChecked(debug)
-            self.online = self.ctx.online
-            self.cbxOnline.setChecked(self.online)
+            self.cbxLauncher.setChecked(self.ctx.Launcher)
             self.minSaat = self.ctx.minSaat
             self.maxSaat = self.ctx.maxSaat
             self.spnTimerDk.setValue(self.ctx.TimerDk)
@@ -94,6 +93,8 @@ class AppContext(ApplicationContext):
             self.cbxZipSilme.setChecked(True if self.ctx.ZipSilme else False)
             self.cbxFlvSilme.setChecked(True if self.ctx.FlvSilme else False)
             #üçüncü tab
+            self.online = self.ctx.online
+            self.cbxOnline.setChecked(self.online)
             self.txtSanalSrv.setText(self.ctx.SanalSrv)
             self.txtLmsSrv.setText(self.ctx.LmsSrv)
             #butonlar
@@ -139,6 +140,8 @@ class AppContext(ApplicationContext):
             self.ctx.ayarYaz('Ayar', 'online', self.ctx.getOnline(self.online))
             self.ctx.main_window.lblOnOff.setText('(Online)' if self.online else '(Offline)')
             if debug: self.ctx.logYaz(f"Ayarlar: Online= {self.ctx.getOnline(self.online)}")
+            self.ctx.Launcher = self.cbxLauncher.isChecked()
+            self.ctx.ayarYaz('DersProgram', 'Launcher', 'Evet' if self.ctx.Launcher else 'Hayir')
             self.ctx.minSaat = self.timMinSaat.time().toString('hh:mm')
             self.ctx.ayarYaz('DersProgram', 'minSaat', self.ctx.minSaat)
             self.ctx.maxSaat = self.timMaxSaat.time().toString('hh:mm')
@@ -195,6 +198,7 @@ class AppContext(ApplicationContext):
         self.ctx.setOnline (self.ctx.ayarOku('Ayar', 'online'))
         self.ctx.ayarYaz('Ayar', 'online', self.ctx.getOnline())
         self.ctx.dbConnected = False
+        self.ctx.Launcher = True if self.ctx.ayarOku('DersProgram', 'Launcher') == 'Evet' else False
         ayarDeger = self.ctx.ayarOku('Ayar', 'TimerDk')
         if ayarDeger is None: ayarDeger = '2' #1 dakikada bir kontrol
         self.ctx.TimerDk = int(ayarDeger)
@@ -966,7 +970,7 @@ class dersProgrami(QDialog):
         simdiki = dersler[i]['tarih'] + '/' + dersler[i]['saat']
         if son != simdiki or (son == simdiki and not self.ctx.tekraracma):
             oturum = self.ders_programi_getir()
-            dersurl = dersler[i]['link'] + '?session=' + oturum + '&proto=true'
+            dersurl = dersler[i]['link'] + '?session=' + oturum + '&proto=true' + '' if self.ctx.Launcher else '&launcher=false'
             #webbrowser.open(f'http://{self.ctx.SanalSrv}/login?session=' + oturum)
             webbrowser.open(dersurl)
             user_id, login, name, yenicerez = self.ctx.getCommonInfo(oturum)

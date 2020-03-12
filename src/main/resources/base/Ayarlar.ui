@@ -53,7 +53,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="tabDersProg">
     <attribute name="title">
@@ -72,22 +72,6 @@
       <string>HH:mm</string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_3">
-     <property name="geometry">
-      <rect>
-       <x>4</x>
-       <y>74</y>
-       <width>130</width>
-       <height>13</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Online (siteden al)    : </string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-    </widget>
     <widget class="QLabel" name="label_2">
      <property name="geometry">
       <rect>
@@ -102,19 +86,6 @@
      </property>
      <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="cbxOnline">
-     <property name="geometry">
-      <rect>
-       <x>144</x>
-       <y>74</y>
-       <width>82</width>
-       <height>13</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string/>
      </property>
     </widget>
     <widget class="QRadioButton" name="radKaynak">
@@ -220,7 +191,7 @@
       <rect>
        <x>144</x>
        <y>44</y>
-       <width>82</width>
+       <width>20</width>
        <height>13</height>
       </rect>
      </property>
@@ -354,12 +325,15 @@
       <rect>
        <x>354</x>
        <y>104</y>
-       <width>82</width>
+       <width>20</width>
        <height>13</height>
       </rect>
      </property>
      <property name="text">
       <string/>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
     <widget class="QTimeEdit" name="timMinSaat">
@@ -373,6 +347,38 @@
      </property>
      <property name="displayFormat">
       <string>HH:mm</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_19">
+     <property name="geometry">
+      <rect>
+       <x>4</x>
+       <y>74</y>
+       <width>130</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>       Launcher    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="cbxLauncher">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>74</y>
+       <width>20</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </widget>
@@ -445,6 +451,9 @@
      </property>
      <property name="text">
       <string/>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
     <widget class="QLabel" name="label_12">
@@ -611,7 +620,7 @@
      <property name="geometry">
       <rect>
        <x>15</x>
-       <y>16</y>
+       <y>44</y>
        <width>85</width>
        <height>13</height>
       </rect>
@@ -627,7 +636,7 @@
      <property name="geometry">
       <rect>
        <x>100</x>
-       <y>14</y>
+       <y>44</y>
        <width>300</width>
        <height>20</height>
       </rect>
@@ -637,7 +646,7 @@
      <property name="geometry">
       <rect>
        <x>15</x>
-       <y>50</y>
+       <y>74</y>
        <width>85</width>
        <height>13</height>
       </rect>
@@ -653,10 +662,42 @@
      <property name="geometry">
       <rect>
        <x>100</x>
-       <y>48</y>
+       <y>74</y>
        <width>300</width>
        <height>20</height>
       </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>15</x>
+       <y>14</y>
+       <width>110</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Online (siteden al)    : </string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="cbxOnline">
+     <property name="geometry">
+      <rect>
+       <x>130</x>
+       <y>14</y>
+       <width>20</width>
+       <height>13</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </widget>

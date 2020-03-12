@@ -228,7 +228,7 @@ class dersIcerik(QDialog):
         if basarili:
             # print('sonuc=', sonuc)
             soup = BeautifulSoup(sonuc['Deger'], features='html.parser')
-            eleman = soup.find('a',{'class':'btn btn-xs btn-outline-purple'})
+            eleman = soup.find_all('a',{'class':'btn btn-xs btn-outline-purple'})
             if eleman:
                 baglanti=eleman.attrs['onclick'].split("'")[1]
                 # print(f"baglanti={baglanti}")
