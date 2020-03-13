@@ -970,7 +970,7 @@ class dersProgrami(QDialog):
         simdiki = dersler[i]['tarih'] + '/' + dersler[i]['saat']
         if son != simdiki or (son == simdiki and not self.ctx.tekraracma):
             oturum = self.ders_programi_getir()
-            dersurl = dersler[i]['link'] + '?session=' + oturum + '&proto=true' + '' if self.ctx.Launcher else '&launcher=false'
+            dersurl = dersler[i]['link'] + '?session=' + oturum + '&proto=true' + ('' if self.ctx.Launcher else '&launcher=false')
             #webbrowser.open(f'http://{self.ctx.SanalSrv}/login?session=' + oturum)
             webbrowser.open(dersurl)
             user_id, login, name, yenicerez = self.ctx.getCommonInfo(oturum)
