@@ -59,6 +59,7 @@ Arşiv İzleme menüsünden:
 - Kaç dakika önce     : ders sayfası, ders saatinden kaç dakika önce açılsın. def=3
 - Debug (log tut)     : bir dosyaya (ve/veya konsola) debug bilgileri yazılsın def=hayır
 - Online (siteden al) : uygulama online mı çalışsın, yoksa indirdiği responselar üzerinden offline mı def:evet
+- Launcher            : ders açarken connect eklentisini kullanmak için Evet, tarayıcıda açmak için Hayır.
 - En erken, En geç ders saati      : bu saatler dışında ders programı güncellemesi yapma, ders açma def:17.30-23.30
 - Timer kontrol dakika: otomatik işlemler kaç dakikada bir çalışsın (program kontrol) def=1
 - Ders program güncelleme          : ders programını siteden ne periyodda güncellesin def=120
@@ -82,5 +83,6 @@ exe'ye çevirmek için fbs modülünü indirip, aynı klasör yapısını oluşt
 
 Veya <a href=https://1drv.ms/u/s!AnY5SpLroMRqlZQDVdwOXJoE7Oy0DQ> kurulum paketi</a> ile windowsa kurup kullanabilirsiniz. (windows 10 ve 2012'da denendi)
 
+NOT: Bir arkadaşımın derslerinden birinin içerik okuma menüsünde 2 adet içerik var. Ders Algoritma dersi, içeriklerden ilki Kazak dili, ikincisi Algoritmalar. Bu tür hatalar siteden kaynaklanıyor bunlar için programda değişiklik yapamam. İki içerik gösteren ekranda sayfa kaynağını açın. Linke bakın. Icerik okuma icin oluşturulan oys-yesevi.db adlı sqlite dosyaya DB Browser for SQLite ile bağlanın. Dersin linkini düzeltip kaydedin.
 
 NOT: Bu açık kaynak bir projedir. Sitede zaman içinde meydana gelen değişiklikler nedeniyle çalışmayan ekranlar olursa, kendiniz değiştirip düzeltebilirsiniz. Benim öğrenciliğim bittiği için sisteme erişemiyorum, zaman ayıramaıyorum, dolayısı ile düzeltme yapmam söz konusu değil. Lütfen kodu çekip öğreniniz.
